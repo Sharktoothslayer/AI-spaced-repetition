@@ -37,11 +37,15 @@ def chat():
         }
         
         # Send request to Ollama
+        print(f"Attempting to connect to Ollama at: {OLLAMA_BASE_URL}")
         response = requests.post(
             f'{OLLAMA_BASE_URL}/api/chat',
             json=ollama_request,
             timeout=30
         )
+        
+        print(f"Ollama response status: {response.status_code}")
+        print(f"Ollama response: {response.text}")
         
         if response.status_code == 200:
             ollama_response = response.json()
@@ -52,7 +56,7 @@ def chat():
                 'model': DEFAULT_MODEL
             })
         else:
-            return jsonify({'error': f'Ollama error: {response.status_code}'}), 500
+            return jsonify({'error': f'Ollama error: {response.status_code} - {response.text}'}), 500
             
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Connection error: {str(e)}'}), 500
