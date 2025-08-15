@@ -4,13 +4,12 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - OLLAMA_BASE_URL=http://localhost:11434
+      - OLLAMA_BASE_URL=http://192.168.0.223:11434
       - OLLAMA_MODEL=llama3.2
     volumes:
       - .:/app
     restart: unless-stopped
-    networks:
-      - ai-chat-network
+    network_mode: host
 
 networks:
   ai-chat-network:
