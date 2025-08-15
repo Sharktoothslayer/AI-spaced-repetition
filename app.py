@@ -3,11 +3,15 @@ from flask_cors import CORS
 import requests
 import os
 from dotenv import load_dotenv
+from spaced_repetition import SpacedRepetition
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app, origins=["*"], methods=["GET", "POST"], allow_headers=["Content-Type"])
+
+# Initialize spaced repetition system
+sr_system = SpacedRepetition()
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
@@ -20,6 +24,98 @@ def index():
 @app.route('/api/test')
 def test():
     return jsonify({'status': 'ok', 'message': 'Backend is working'})
+
+# Spaced Repetition API endpoints
+@app.route('/api/sr/words', methods=['GET'])
+def get_words():
+    """Get all vocabulary words"""
+    try:
+        words = sr_system.get_all_words()
+        return jsonify({'words': words})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/words', methods=['POST'])
+def add_word():
+    """Add a new word to vocabulary"""
+    try:
+        data = request.get_json()
+        word = data.get('word', '').strip()
+        translation = data.get('translation', '').strip()
+        example = data.get('example', '').strip()
+        notes = data.get('notes', '').strip()
+        
+        if not word or not translation:
+            return jsonify({'error': 'Word and translation are required'}), 400
+        
+        word_data = sr_system.add_word(word, translation, example, notes)
+        return jsonify({'word': word_data, 'message': 'Word added successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/words/<word_id>', methods=['DELETE'])
+def delete_word(word_id):
+    """Delete a word from vocabulary"""
+    try:
+        success = sr_system.delete_word(word_id)
+        if success:
+            return jsonify({'message': 'Word deleted successfully'})
+        else:
+            return jsonify({'error': 'Word not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/due', methods=['GET'])
+def get_due_words():
+    """Get words that are due for review"""
+    try:
+        due_words = sr_system.get_due_words()
+        return jsonify({'words': due_words})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/review', methods=['POST'])
+def review_word():
+    """Review a word with quality rating"""
+    try:
+        data = request.get_json()
+        word_id = data.get('word_id')
+        quality = data.get('quality')
+        
+        if word_id is None or quality is None:
+            return jsonify({'error': 'word_id and quality are required'}), 400
+        
+        if not isinstance(quality, int) or quality < 0 or quality > 5:
+            return jsonify({'error': 'Quality must be an integer between 0 and 5'}), 400
+        
+        word_data = sr_system.review_word(word_id, quality)
+        return jsonify({'word': word_data, 'message': 'Review completed'})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/stats', methods=['GET'])
+def get_stats():
+    """Get spaced repetition statistics"""
+    try:
+        stats = sr_system.get_stats()
+        return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/search', methods=['GET'])
+def search_words():
+    """Search words by query"""
+    try:
+        query = request.args.get('q', '').strip()
+        if not query:
+            return jsonify({'error': 'Query parameter is required'}), 400
+        
+        results = sr_system.search_words(query)
+        return jsonify({'words': results})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -37,10 +133,14 @@ def chat():
         if not message:
             return jsonify({'error': 'Message is required'}), 400
         
-        # Prepare request to Ollama
+        # Prepare request to Ollama with Italian tutor system prompt
         ollama_request = {
             'model': DEFAULT_MODEL,
             'messages': [
+                {
+                    'role': 'system',
+                    'content': 'Sei un tutor di italiano amichevole e conversazionale. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali, come se stessi parlando con un amico. Usa un tono incoraggiante e non troppo formale, ma sempre grammaticalmente corretto. Sprigiona in nuove parole e espressioni quando possibile per aiutare lo studente a imparare.'
+                },
                 {
                     'role': 'user',
                     'content': message

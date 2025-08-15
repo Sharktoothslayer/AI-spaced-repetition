@@ -15,17 +15,95 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px 0;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header h2 {
+            text-align: center;
+            color: #333;
+            margin: 0 0 30px 0;
+            font-size: 1.3rem;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0 20px;
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            width: 100%;
+        }
+
+        .nav-button:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .nav-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        .tab-content {
+            display: none;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Chat Container */
         .chat-container {
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 90%;
-            max-width: 800px;
+            width: 100%;
             height: 80vh;
             display: flex;
             flex-direction: column;
@@ -172,36 +250,393 @@
             margin: 10px 0;
             border: 1px solid #fcc;
         }
+
+        /* Vocabulary Styles */
+        .vocabulary-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .vocabulary-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add-word-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-word-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .search-container {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+        }
+
+        .words-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .word-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .word-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .word-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .delete-word-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .word-translation {
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .word-example {
+            color: #888;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        .word-notes {
+            color: #666;
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 6px;
+        }
+
+        /* Review Styles */
+        .review-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .review-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .review-stats {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .review-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .card-front, .card-back {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .show-answer-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .quality-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .quality-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .quality-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .quality-btn[data-quality="0"] { background: #dc3545; }
+        .quality-btn[data-quality="1"] { background: #fd7e14; }
+        .quality-btn[data-quality="2"] { background: #ffc107; }
+        .quality-btn[data-quality="3"] { background: #28a745; }
+
+        .no-reviews {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #666;
+        }
+
+        /* Stats Styles */
+        .stats-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .stats-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 40px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>AI Language Learning Chat</h1>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Language Learning</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-button active" data-tab="chat">
+                    <span class="nav-icon">💬</span>
+                    Chat
+                </button>
+                <button class="nav-button" data-tab="vocabulary">
+                    <span class="nav-icon">📚</span>
+                    Vocabulary
+                </button>
+                <button class="nav-button" data-tab="review">
+                    <span class="nav-icon">🔄</span>
+                    Review
+                </button>
+                <button class="nav-button" data-tab="stats">
+                    <span class="nav-icon">📊</span>
+                    Stats
+                </button>
+            </nav>
         </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <div class="message ai">
-                <div class="message-avatar">AI</div>
-                <div class="message-content">
-                    Hello! I'm here to help you learn languages. What would you like to practice today?
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Chat Tab -->
+            <div class="tab-content active" id="chat-tab">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h1>AI Italian Tutor</h1>
+                    </div>
+                    
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai">
+                            <div class="message-avatar">AI</div>
+                            <div class="message-content">
+                                Ciao! Sono il tuo tutor di italiano. Come posso aiutarti oggi?
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <form class="chat-input-form" id="chatForm">
+                            <input 
+                                type="text" 
+                                class="chat-input" 
+                                id="messageInput" 
+                                placeholder="Scrivi il tuo messaggio qui..."
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="send-button" id="sendButton">
+                                Invia
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="chat-input-container">
-            <form class="chat-input-form" id="chatForm">
-                <input 
-                    type="text" 
-                    class="chat-input" 
-                    id="messageInput" 
-                    placeholder="Type your message here..."
-                    autocomplete="off"
-                >
-                <button type="submit" class="send-button" id="sendButton">
-                    Send
-                </button>
-            </form>
+
+            <!-- Vocabulary Tab -->
+            <div class="tab-content" id="vocabulary-tab">
+                <div class="vocabulary-container">
+                    <div class="vocabulary-header">
+                        <h1>Vocabulary Manager</h1>
+                        <button class="add-word-btn" id="addWordBtn">+ Add Word</button>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
+                    </div>
+                    
+                    <div class="words-list" id="wordsList">
+                        <!-- Words will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Tab -->
+            <div class="tab-content" id="review-tab">
+                <div class="review-container">
+                    <div class="review-header">
+                        <h1>Review Words</h1>
+                        <div class="review-stats">
+                            <span id="dueCount">0</span> words due
+                        </div>
+                    </div>
+                    
+                    <div class="review-card" id="reviewCard" style="display: none;">
+                        <div class="card-front">
+                            <h2 id="reviewWord">Word</h2>
+                            <button class="show-answer-btn" id="showAnswerBtn">Show Answer</button>
+                        </div>
+                        <div class="card-back" id="cardBack" style="display: none;">
+                            <h3>Translation</h3>
+                            <p id="reviewTranslation">Translation</p>
+                            <div class="example-section" id="exampleSection" style="display: none;">
+                                <h4>Example</h4>
+                                <p id="reviewExample">Example</p>
+                            </div>
+                            <div class="quality-buttons">
+                                <button class="quality-btn" data-quality="0">Again</button>
+                                <button class="quality-btn" data-quality="1">Hard</button>
+                                <button class="quality-btn" data-quality="2">Good</button>
+                                <button class="quality-btn" data-quality="3">Easy</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="no-reviews" id="noReviews">
+                        <p>No words due for review! 🎉</p>
+                        <p>Add some words to get started.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div class="tab-content" id="stats-tab">
+                <div class="stats-container">
+                    <div class="stats-header">
+                        <h1>Learning Statistics</h1>
+                    </div>
+                    
+                    <div class="stats-grid" id="statsGrid">
+                        <!-- Stats will be loaded here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -295,6 +730,275 @@
                 }
             }
         });
+
+        // Tab Navigation
+        const navButtons = document.querySelectorAll('.nav-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                
+                // Update active states
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(tab => tab.classList.remove('active'));
+                
+                button.classList.add('active');
+                document.getElementById(`${targetTab}-tab`).classList.add('active');
+                
+                // Load content based on tab
+                if (targetTab === 'vocabulary') {
+                    loadVocabulary();
+                } else if (targetTab === 'review') {
+                    loadReview();
+                } else if (targetTab === 'stats') {
+                    loadStats();
+                }
+            });
+        });
+
+        // Spaced Repetition System
+        let currentReviewWord = null;
+        let reviewWords = [];
+
+        // Vocabulary Management
+        async function loadVocabulary() {
+            try {
+                const response = await fetch('/api/sr/words');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayWords(data.words);
+                } else {
+                    console.error('Failed to load words:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading vocabulary:', error);
+            }
+        }
+
+        function displayWords(words) {
+            const wordsList = document.getElementById('wordsList');
+            wordsList.innerHTML = '';
+            
+            if (words.length === 0) {
+                wordsList.innerHTML = '<p style="text-align: center; color: #666; margin-top: 40px;">No words added yet. Add your first word to get started!</p>';
+                return;
+            }
+            
+            words.forEach(word => {
+                const wordElement = document.createElement('div');
+                wordElement.className = 'word-item';
+                wordElement.innerHTML = `
+                    <div class="word-header">
+                        <span class="word-text">${word.word}</span>
+                        <button class="delete-word-btn" onclick="deleteWord('${word.id}')">Delete</button>
+                    </div>
+                    <div class="word-translation">${word.translation}</div>
+                    ${word.example ? `<div class="word-example">"${word.example}"</div>` : ''}
+                    ${word.notes ? `<div class="word-notes">${word.notes}</div>` : ''}
+                `;
+                wordsList.appendChild(wordElement);
+            });
+        }
+
+        async function deleteWord(wordId) {
+            if (!confirm('Are you sure you want to delete this word?')) return;
+            
+            try {
+                const response = await fetch(`/api/sr/words/${wordId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadVocabulary(); // Reload the list
+                } else {
+                    console.error('Failed to delete word');
+                }
+            } catch (error) {
+                console.error('Error deleting word:', error);
+            }
+        }
+
+        // Add Word Modal
+        document.getElementById('addWordBtn').addEventListener('click', () => {
+            const word = prompt('Enter the word:');
+            if (!word) return;
+            
+            const translation = prompt('Enter the translation:');
+            if (!translation) return;
+            
+            const example = prompt('Enter an example sentence (optional):');
+            const notes = prompt('Enter notes (optional):');
+            
+            addWord(word, translation, example, notes);
+        });
+
+        async function addWord(word, translation, example = '', notes = '') {
+            try {
+                const response = await fetch('/api/sr/words', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ word, translation, example, notes })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    loadVocabulary(); // Reload the list
+                } else {
+                    alert('Failed to add word: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error adding word:', error);
+                alert('Error adding word');
+            }
+        }
+
+        // Review System
+        async function loadReview() {
+            try {
+                const response = await fetch('/api/sr/due');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    reviewWords = data.words;
+                    document.getElementById('dueCount').textContent = reviewWords.length;
+                    
+                    if (reviewWords.length > 0) {
+                        startReview();
+                    } else {
+                        showNoReviews();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading review:', error);
+            }
+        }
+
+        function startReview() {
+            currentReviewWord = reviewWords[0];
+            
+            document.getElementById('reviewCard').style.display = 'block';
+            document.getElementById('noReviews').style.display = 'none';
+            
+            document.getElementById('reviewWord').textContent = currentReviewWord.word;
+            document.getElementById('cardBack').style.display = 'none';
+        }
+
+        function showNoReviews() {
+            document.getElementById('reviewCard').style.display = 'none';
+            document.getElementById('noReviews').style.display = 'block';
+        }
+
+        document.getElementById('showAnswerBtn').addEventListener('click', () => {
+            document.getElementById('cardBack').style.display = 'block';
+            document.getElementById('reviewTranslation').textContent = currentReviewWord.translation;
+            
+            if (currentReviewWord.example) {
+                document.getElementById('exampleSection').style.display = 'block';
+                document.getElementById('reviewExample').textContent = currentReviewWord.example;
+            } else {
+                document.getElementById('exampleSection').style.display = 'none';
+            }
+        });
+
+        // Quality buttons
+        document.querySelectorAll('.quality-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const quality = parseInt(btn.getAttribute('data-quality'));
+                reviewWord(quality);
+            });
+        });
+
+        async function reviewWord(quality) {
+            try {
+                const response = await fetch('/api/sr/review', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        word_id: currentReviewWord.id,
+                        quality: quality
+                    })
+                });
+                
+                if (response.ok) {
+                    // Remove the reviewed word from the list
+                    reviewWords.shift();
+                    
+                    if (reviewWords.length > 0) {
+                        startReview(); // Start next word
+                    } else {
+                        showNoReviews(); // No more words to review
+                    }
+                }
+            } catch (error) {
+                console.error('Error reviewing word:', error);
+            }
+        }
+
+        // Stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/sr/stats');
+                const stats = await response.json();
+                
+                if (response.ok) {
+                    displayStats(stats);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function displayStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total_words}</div>
+                    <div class="stat-label">Total Words</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.due_words}</div>
+                    <div class="stat-label">Words Due</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total_reviews}</div>
+                    <div class="stat-label">Total Reviews</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.accuracy}%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+            `;
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (query) {
+                searchWords(query);
+            } else {
+                loadVocabulary(); // Show all words if search is empty
+            }
+        });
+
+        async function searchWords(query) {
+            try {
+                const response = await fetch(`/api/sr/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayWords(data.words);
+                }
+            } catch (error) {
+                console.error('Error searching words:', error);
+            }
+        }
     </script>
 </body>
 </html> 
