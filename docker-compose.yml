@@ -4,7 +4,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - OLLAMA_BASE_URL=http://100.107.135.85:11434
+      - OLLAMA_BASE_URL=http://192.168.0.223:11434
       - OLLAMA_MODEL=llama3.2
     volumes:
       - .:/app
