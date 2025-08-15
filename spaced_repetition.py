@@ -23,7 +23,7 @@ class SpacedRepetition:
         with open(self.data_file, 'w', encoding='utf-8') as f:
             json.dump(self.vocabulary, f, ensure_ascii=False, indent=2)
     
-    def add_word(self, word: str, translation: str, example: str = "", notes: str = "") -> Dict:
+    def add_word(self, word: str, translation: str, example: str = "", word_type: str = "", notes: str = "") -> Dict:
         """Add a new word to the vocabulary"""
         word_id = str(int(time.time() * 1000))  # Unique ID based on timestamp
         
@@ -32,6 +32,7 @@ class SpacedRepetition:
             "word": word,
             "translation": translation,
             "example": example,
+            "word_type": word_type,
             "notes": notes,
             "created": datetime.now().isoformat(),
             "last_reviewed": None,
@@ -145,6 +146,25 @@ class SpacedRepetition:
             "total_reviews": total_reviews,
             "accuracy": round(accuracy, 1)
         }
+    
+    def get_upcoming_reviews(self, days_ahead: int = 7) -> List[Dict]:
+        """Get words that will be due for review in the next X days"""
+        now = datetime.now()
+        end_date = now + timedelta(days=days_ahead)
+        upcoming = []
+        
+        for word_data in self.vocabulary.values():
+            next_review = datetime.fromisoformat(word_data["next_review"])
+            if now < next_review <= end_date:
+                days_until = (next_review - now).days
+                upcoming.append({
+                    **word_data,
+                    "days_until": days_until
+                })
+        
+        # Sort by when they're due
+        upcoming.sort(key=lambda x: x["days_until"])
+        return upcoming
     
     def search_words(self, query: str) -> List[Dict]:
         """Search words by word, translation, or notes"""

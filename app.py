@@ -43,15 +43,83 @@ def add_word():
         word = data.get('word', '').strip()
         translation = data.get('translation', '').strip()
         example = data.get('example', '').strip()
+        word_type = data.get('word_type', '').strip()
         notes = data.get('notes', '').strip()
         
         if not word or not translation:
             return jsonify({'error': 'Word and translation are required'}), 400
         
-        word_data = sr_system.add_word(word, translation, example, notes)
+        word_data = sr_system.add_word(word, translation, example, word_type, notes)
         return jsonify({'word': word_data, 'message': 'Word added successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/ai-translate', methods=['POST'])
+def ai_translate():
+    """Use AI to translate and provide context for a word"""
+    try:
+        data = request.get_json()
+        word = data.get('word', '').strip()
+        
+        if not word:
+            return jsonify({'error': 'Word is required'}), 400
+        
+        # Prepare request to Ollama for translation
+        ollama_request = {
+            'model': DEFAULT_MODEL,
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'Sei un assistente di traduzione italiano. Per ogni parola fornita, rispondi SOLO con un JSON nel seguente formato esatto:\n{\n  "translation": "traduzione in inglese",\n  "example": "frase di esempio in italiano che usa questa parola",\n  "word_type": "tipo di parola (verbo, sostantivo, aggettivo, avverbio, ecc.)"\n}\n\nNon includere altro testo, solo il JSON.'
+                },
+                {
+                    'role': 'user',
+                    'content': f'Traduci questa parola italiana: {word}'
+                }
+            ],
+            'stream': False
+        }
+        
+        print(f"AI translation request for word: {word}")
+        
+        # Send request to Ollama
+        response = requests.post(
+            f'{OLLAMA_BASE_URL}/api/chat',
+            json=ollama_request,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            ollama_response = response.json()
+            ai_message = ollama_response.get('message', {}).get('content', '')
+            
+            try:
+                # Try to parse the JSON response
+                import json
+                translation_data = json.loads(ai_message)
+                
+                return jsonify({
+                    'translation': translation_data.get('translation', ''),
+                    'example': translation_data.get('example', ''),
+                    'word_type': translation_data.get('word_type', ''),
+                    'success': True
+                })
+            except json.JSONDecodeError:
+                # If JSON parsing fails, try to extract information manually
+                return jsonify({
+                    'translation': 'Translation failed',
+                    'example': 'Example not available',
+                    'word_type': 'Unknown',
+                    'success': False,
+                    'raw_response': ai_message
+                })
+        else:
+            return jsonify({'error': f'Ollama error: {response.status_code}'}), 500
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Connection error: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/sr/words/<word_id>', methods=['DELETE'])
 def delete_word(word_id):
@@ -101,6 +169,16 @@ def get_stats():
     try:
         stats = sr_system.get_stats()
         return jsonify(stats)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/upcoming', methods=['GET'])
+def get_upcoming_reviews():
+    """Get upcoming reviews in the next 7 days"""
+    try:
+        days_ahead = request.args.get('days', 7, type=int)
+        upcoming = sr_system.get_upcoming_reviews(days_ahead)
+        return jsonify({'upcoming': upcoming})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

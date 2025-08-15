@@ -348,6 +348,18 @@
             margin-bottom: 8px;
         }
 
+        .word-type {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
         .word-example {
             color: #888;
             font-style: italic;
@@ -505,6 +517,55 @@
             color: #666;
             font-size: 16px;
         }
+
+        .upcoming-reviews-section {
+            padding: 20px 40px;
+            border-top: 1px solid #eee;
+        }
+
+        .upcoming-reviews-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .upcoming-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .upcoming-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upcoming-word {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .upcoming-days {
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .upcoming-days.soon {
+            background: #ffc107;
+        }
+
+        .upcoming-days.today {
+            background: #dc3545;
+        }
     </style>
 </head>
 <body>
@@ -625,18 +686,25 @@
                 </div>
             </div>
 
-            <!-- Stats Tab -->
-            <div class="tab-content" id="stats-tab">
-                <div class="stats-container">
-                    <div class="stats-header">
-                        <h1>Learning Statistics</h1>
-                    </div>
-                    
-                    <div class="stats-grid" id="statsGrid">
-                        <!-- Stats will be loaded here -->
-                    </div>
-                </div>
-            </div>
+                         <!-- Stats Tab -->
+             <div class="tab-content" id="stats-tab">
+                 <div class="stats-container">
+                     <div class="stats-header">
+                         <h1>Learning Statistics</h1>
+                     </div>
+                     
+                     <div class="stats-grid" id="statsGrid">
+                         <!-- Stats will be loaded here -->
+                     </div>
+                     
+                     <div class="upcoming-reviews-section">
+                         <h3>Upcoming Reviews (Next 7 Days)</h3>
+                         <div class="upcoming-list" id="upcomingList">
+                             <!-- Upcoming reviews will be loaded here -->
+                         </div>
+                     </div>
+                 </div>
+             </div>
         </div>
     </div>
 
@@ -795,8 +863,9 @@
                         <button class="delete-word-btn" onclick="deleteWord('${word.id}')">Delete</button>
                     </div>
                     <div class="word-translation">${word.translation}</div>
-                    ${word.example ? `<div class="word-example">"${word.example}"</div>` : ''}
-                    ${word.notes ? `<div class="word-notes">${word.notes}</div>` : ''}
+                                         ${word.word_type ? `<div class="word-type">${word.word_type}</div>` : ''}
+                     ${word.example ? `<div class="word-example">"${word.example}"</div>` : ''}
+                     ${word.notes ? `<div class="word-notes">${word.notes}</div>` : ''}
                 `;
                 wordsList.appendChild(wordElement);
             });
@@ -821,28 +890,66 @@
         }
 
         // Add Word Modal
-        document.getElementById('addWordBtn').addEventListener('click', () => {
-            const word = prompt('Enter the word:');
+        document.getElementById('addWordBtn').addEventListener('click', async () => {
+            const word = prompt('Enter the Italian word:');
             if (!word) return;
             
-            const translation = prompt('Enter the translation:');
-            if (!translation) return;
-            
-            const example = prompt('Enter an example sentence (optional):');
-            const notes = prompt('Enter notes (optional):');
-            
-            addWord(word, translation, example, notes);
+            // Use AI to get translation, example, and word type
+            try {
+                const response = await fetch('/api/sr/ai-translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ word: word })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Show the AI-generated content and allow editing
+                    const translation = prompt(`Translation: ${data.translation}\n\nEdit if needed:`, data.translation);
+                    if (!translation) return;
+                    
+                    const example = prompt(`Example sentence: ${data.example}\n\nEdit if needed:`, data.example);
+                    const wordType = prompt(`Word type: ${data.word_type}\n\nEdit if needed:`, data.word_type);
+                    const notes = prompt('Additional notes (optional):');
+                    
+                    addWord(word, translation, example, wordType, notes);
+                } else {
+                    // Fallback to manual entry if AI fails
+                    const translation = prompt('AI translation failed. Enter translation manually:');
+                    if (!translation) return;
+                    
+                    const example = prompt('Enter an example sentence (optional):');
+                    const wordType = prompt('Enter word type (verb, noun, adjective, etc.):');
+                    const notes = prompt('Enter notes (optional):');
+                    
+                    addWord(word, translation, example, wordType, notes);
+                }
+            } catch (error) {
+                console.error('Error getting AI translation:', error);
+                // Fallback to manual entry
+                const translation = prompt('Enter the translation:');
+                if (!translation) return;
+                
+                const example = prompt('Enter an example sentence (optional):');
+                const wordType = prompt('Enter word type (verb, noun, adjective, etc.):');
+                const notes = prompt('Enter notes (optional):');
+                
+                addWord(word, translation, example, wordType, notes);
+            }
         });
 
-        async function addWord(word, translation, example = '', notes = '') {
+        async function addWord(word, translation, example = '', word_type = '', notes = '') {
             try {
                 const response = await fetch('/api/sr/words', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ word, translation, example, notes })
-                });
+                    body: JSON.stringify({ word, translation, example, word_type, notes })
+                })
                 
                 const data = await response.json();
                 
@@ -953,6 +1060,18 @@
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
+            
+            // Also load upcoming reviews
+            try {
+                const upcomingResponse = await fetch('/api/sr/upcoming?days=7');
+                const upcomingData = await upcomingResponse.json();
+                
+                if (upcomingResponse.ok) {
+                    displayUpcomingReviews(upcomingData.upcoming);
+                }
+            } catch (error) {
+                console.error('Error loading upcoming reviews:', error);
+            }
         }
 
         function displayStats(stats) {
@@ -975,6 +1094,39 @@
                     <div class="stat-label">Accuracy</div>
                 </div>
             `;
+        }
+
+        function displayUpcomingReviews(upcoming) {
+            const upcomingList = document.getElementById('upcomingList');
+            
+            if (upcoming.length === 0) {
+                upcomingList.innerHTML = '<p style="text-align: center; color: #666;">No upcoming reviews in the next 7 days! 🎉</p>';
+                return;
+            }
+            
+            upcomingList.innerHTML = '';
+            
+            upcoming.forEach(word => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'upcoming-item';
+                
+                let daysClass = 'upcoming-days';
+                let daysText = `${word.days_until} days`;
+                
+                if (word.days_until === 0) {
+                    daysClass += ' today';
+                    daysText = 'Today';
+                } else if (word.days_until <= 2) {
+                    daysClass += ' soon';
+                }
+                
+                itemElement.innerHTML = `
+                    <div class="upcoming-word">${word.word}</div>
+                    <div class="${daysClass}">${daysText}</div>
+                `;
+                
+                upcomingList.appendChild(itemElement);
+            });
         }
 
         // Search functionality
