@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import requests
 import os
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
@@ -18,8 +20,15 @@ def index():
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
+        print(f"Received chat request")
         data = request.get_json()
+        print(f"Request data: {data}")
+        
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
+            
         message = data.get('message', '')
+        print(f"Message: {message}")
         
         if not message:
             return jsonify({'error': 'Message is required'}), 400
@@ -36,8 +45,10 @@ def chat():
             'stream': False
         }
         
-        # Send request to Ollama
+        print(f"Ollama request: {ollama_request}")
         print(f"Attempting to connect to Ollama at: {OLLAMA_BASE_URL}")
+        
+        # Send request to Ollama
         response = requests.post(
             f'{OLLAMA_BASE_URL}/api/chat',
             json=ollama_request,
@@ -59,8 +70,10 @@ def chat():
             return jsonify({'error': f'Ollama error: {response.status_code} - {response.text}'}), 500
             
     except requests.exceptions.RequestException as e:
+        print(f"Request exception: {str(e)}")
         return jsonify({'error': f'Connection error: {str(e)}'}), 500
     except Exception as e:
+        print(f"General exception: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
