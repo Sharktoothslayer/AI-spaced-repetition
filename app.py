@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["*"], methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
@@ -16,6 +16,10 @@ DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/test')
+def test():
+    return jsonify({'status': 'ok', 'message': 'Backend is working'})
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
