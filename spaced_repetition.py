@@ -106,7 +106,7 @@ class SpacedRepetition:
         else:
             word_data["incorrect_count"] += 1
         
-        # Calculate new interval using improved SuperMemo 2 algorithm
+        # Calculate new interval using proper SuperMemo 2 algorithm
         if quality < 3:
             # Incorrect response - reset interval
             word_data["interval"] = 0
@@ -117,6 +117,8 @@ class SpacedRepetition:
                 word_data["interval"] = 1
             elif word_data["interval"] == 1:
                 word_data["interval"] = 6
+            elif word_data["interval"] == 6:
+                word_data["interval"] = int(6 * word_data["ease_factor"])
             else:
                 word_data["interval"] = int(word_data["interval"] * word_data["ease_factor"])
             
@@ -268,6 +270,85 @@ class SpacedRepetition:
             "correct_count": word_data["correct_count"],
             "incorrect_count": word_data["incorrect_count"]
         }
+    
+    def get_review_preview(self, word_id: str) -> Dict:
+        """Get preview of what each review option will do"""
+        if word_id not in self.vocabulary:
+            raise ValueError("Word not found")
+        
+        word_data = self.vocabulary.copy()
+        now = datetime.now(self.melbourne_tz)
+        
+        # Create a copy of the word data to simulate the review
+        preview_data = word_data[word_id].copy()
+        
+        previews = {}
+        
+        # Test each quality rating (0-5)
+        for quality in range(6):
+            # Create a copy for this simulation
+            test_data = preview_data.copy()
+            
+            # Simulate the review calculation
+            if quality < 3:
+                # Incorrect response - reset interval
+                test_data["interval"] = 0
+                test_data["ease_factor"] = max(1.3, test_data["ease_factor"] - 0.2)
+            else:
+                # Correct response
+                if test_data["interval"] == 0:
+                    test_data["interval"] = 1
+                elif test_data["interval"] == 1:
+                    test_data["interval"] = 6
+                elif test_data["interval"] == 6:
+                    test_data["interval"] = int(6 * test_data["ease_factor"])
+                else:
+                    test_data["interval"] = int(test_data["interval"] * test_data["ease_factor"])
+                
+                # Adjust ease factor
+                if quality == 3:
+                    test_data["ease_factor"] = test_data["ease_factor"] + 0.1
+                elif quality == 4:
+                    test_data["ease_factor"] = test_data["ease_factor"] + 0.15
+                elif quality == 5:
+                    test_data["ease_factor"] = test_data["ease_factor"] + 0.2
+                
+                # Cap ease factor
+                test_data["ease_factor"] = min(2.5, test_data["ease_factor"])
+            
+            # Calculate next review date
+            if quality == 0 or quality == 1 or quality == 2:
+                # Again - review in 4 hours (same day)
+                next_review = now + timedelta(hours=4)
+            elif quality == 3:
+                # Hard - review in 1 day
+                next_review = now + timedelta(days=1)
+            else:
+                # Good/Easy - use calculated interval
+                next_review = now + timedelta(days=test_data["interval"])
+            
+            # Format the preview
+            if quality == 0:
+                label = "Again (0)"
+            elif quality == 1:
+                label = "Again (1)"
+            elif quality == 2:
+                label = "Hard (2)"
+            elif quality == 3:
+                label = "Good (3)"
+            elif quality == 4:
+                label = "Easy (4)"
+            else:
+                label = "Easy (5)"
+            
+            previews[label] = {
+                "next_review": next_review.isoformat(),
+                "human_readable": self._format_time_interval(next_review - now),
+                "interval": test_data["interval"],
+                "ease_factor": round(test_data["ease_factor"], 2)
+            }
+        
+        return previews
     
 
     
