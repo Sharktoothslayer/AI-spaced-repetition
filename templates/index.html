@@ -1283,15 +1283,24 @@
 
         // Stats
         async function loadStats() {
+            console.log('Loading stats...'); // Debug log
+            
             try {
                 const response = await fetch('/api/sr/stats');
                 const stats = await response.json();
                 
+                console.log('Stats response:', response.status, stats); // Debug log
+                
                 if (response.ok) {
                     displayStats(stats);
+                } else {
+                    console.error('Failed to load stats:', stats.error);
+                    // Show error in the stats sections
+                    showStatsError('Failed to load statistics');
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
+                showStatsError('Network error loading statistics');
             }
             
             // Also load daily upcoming counts
@@ -1299,77 +1308,120 @@
                 const dailyResponse = await fetch('/api/sr/daily-upcoming?days=7');
                 const dailyData = await dailyResponse.json();
                 
+                console.log('Daily response:', dailyResponse.status, dailyData); // Debug log
+                
                 if (dailyResponse.ok) {
                     displayDailyUpcomingCounts(dailyData.daily_counts);
+                } else {
+                    console.error('Failed to load daily counts:', dailyData.error);
+                    showDailyCountsError('Failed to load daily forecast');
                 }
             } catch (error) {
                 console.error('Error loading daily upcoming counts:', error);
+                showDailyCountsError('Network error loading daily forecast');
+            }
+        }
+
+        function showStatsError(message) {
+            const statsOverview = document.getElementById('statsOverview');
+            const metricsGrid = document.getElementById('metricsGrid');
+            const scheduleSummary = document.getElementById('scheduleSummary');
+            
+            if (statsOverview) {
+                statsOverview.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 20px;">${message}</div>`;
+            }
+            if (metricsGrid) {
+                metricsGrid.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 20px;">${message}</div>`;
+            }
+            if (scheduleSummary) {
+                scheduleSummary.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 20px;">${message}</div>`;
+            }
+        }
+
+        function showDailyCountsError(message) {
+            const forecastGrid = document.getElementById('forecastGrid');
+            if (forecastGrid) {
+                forecastGrid.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 20px;">${message}</div>`;
             }
         }
 
         function displayStats(stats) {
+            console.log('Displaying stats:', stats); // Debug log
+            
             // Display overview cards
             const statsOverview = document.getElementById('statsOverview');
-            statsOverview.innerHTML = `
-                <div class="overview-cards">
-                    <div class="overview-card">
-                        <div class="overview-number">${stats.total_words}</div>
-                        <div class="overview-label">Total Words</div>
+            if (statsOverview) {
+                statsOverview.innerHTML = `
+                    <div class="overview-cards">
+                        <div class="overview-card">
+                            <div class="overview-number">${stats.total_words || 0}</div>
+                            <div class="overview-label">Total Words</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-number">${stats.due_words || 0}</div>
+                            <div class="overview-label">Words Due</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-number">${stats.total_reviews || 0}</div>
+                            <div class="overview-label">Total Reviews</div>
+                        </div>
+                        <div class="overview-card">
+                            <div class="overview-number">${stats.accuracy || 0}%</div>
+                            <div class="overview-label">Accuracy</div>
+                        </div>
                     </div>
-                    <div class="overview-card">
-                        <div class="overview-number">${stats.due_words}</div>
-                        <div class="overview-label">Words Due</div>
-                    </div>
-                    <div class="overview-card">
-                        <div class="overview-number">${stats.total_reviews}</div>
-                        <div class="overview-label">Total Reviews</div>
-                    </div>
-                    <div class="overview-card">
-                        <div class="overview-number">${stats.accuracy}%</div>
-                        <div class="overview-label">Accuracy</div>
-                    </div>
-                </div>
-            `;
+                `;
+            }
 
             // Display performance metrics
             const metricsGrid = document.getElementById('metricsGrid');
-            const avgReviewsPerWord = stats.total_reviews > 0 ? (stats.total_reviews / stats.total_words).toFixed(1) : '0';
-            const successRate = stats.total_reviews > 0 ? ((stats.total_reviews - (stats.total_reviews * (1 - stats.accuracy/100))) / stats.total_reviews * 100).toFixed(1) : '0';
-            
-            metricsGrid.innerHTML = `
-                <div class="metric-item">
-                    <div class="metric-value">${avgReviewsPerWord}</div>
-                    <div class="metric-label">Avg Reviews/Word</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-value">${successRate}%</div>
-                    <div class="metric-label">Success Rate</div>
-                </div>
-            `;
+            if (metricsGrid) {
+                const avgReviewsPerWord = stats.total_reviews > 0 && stats.total_words > 0 ? (stats.total_reviews / stats.total_words).toFixed(1) : '0';
+                const successRate = stats.total_reviews > 0 ? stats.accuracy || 0 : 0;
+                
+                metricsGrid.innerHTML = `
+                    <div class="metric-item">
+                        <div class="metric-value">${avgReviewsPerWord}</div>
+                        <div class="metric-label">Avg Reviews/Word</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">${successRate}%</div>
+                        <div class="metric-label">Success Rate</div>
+                    </div>
+                `;
+            }
 
             // Display schedule summary
             const scheduleSummary = document.getElementById('scheduleSummary');
-            const nextReview = stats.due_words > 0 ? 'Now' : 'Later';
-            const urgency = stats.due_words > 5 ? 'High' : stats.due_words > 2 ? 'Medium' : 'Low';
-            
-            scheduleSummary.innerHTML = `
-                <div class="schedule-item">
-                    <span class="schedule-label">Next Review</span>
-                    <span class="schedule-value">${nextReview}</span>
-                </div>
-                <div class="schedule-item">
-                    <span class="schedule-label">Urgency Level</span>
-                    <span class="schedule-value">${urgency}</span>
-                </div>
-                <div class="schedule-item">
-                    <span class="schedule-label">Learning Pace</span>
-                    <span class="schedule-value">${stats.total_reviews > 0 ? 'Active' : 'Starting'}</span>
-                </div>
-            `;
+            if (scheduleSummary) {
+                const nextReview = stats.due_words > 0 ? 'Now' : 'Later';
+                const urgency = stats.due_words > 5 ? 'High' : stats.due_words > 2 ? 'Medium' : 'Low';
+                
+                scheduleSummary.innerHTML = `
+                    <div class="schedule-item">
+                        <span class="schedule-label">Next Review</span>
+                        <span class="schedule-value">${nextReview}</span>
+                    </div>
+                    <div class="schedule-item">
+                        <span class="schedule-label">Urgency Level</span>
+                        <span class="schedule-value">${urgency}</span>
+                    </div>
+                    <div class="schedule-item">
+                        <span class="schedule-label">Learning Pace</span>
+                        <span class="schedule-value">${stats.total_reviews > 0 ? 'Active' : 'Starting'}</span>
+                    </div>
+                `;
+            }
         }
 
         function displayDailyUpcomingCounts(dailyCounts) {
+            console.log('Displaying daily counts:', dailyCounts); // Debug log
+            
             const forecastGrid = document.getElementById('forecastGrid');
+            if (!forecastGrid) {
+                console.error('Forecast grid element not found');
+                return;
+            }
             
             if (!dailyCounts || dailyCounts.length === 0) {
                 forecastGrid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1 / -1;">No upcoming reviews in the next 7 days! 🎉</p>';
