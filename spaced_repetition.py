@@ -134,14 +134,17 @@ class SpacedRepetition:
             word_data["ease_factor"] = min(2.5, word_data["ease_factor"])
         
         # Calculate next review date with improved intervals
-        if quality == 0 or quality == 1 or quality == 2:
+        if quality == 0 or quality == 1:
             # Again - review in 4 hours (same day)
             next_review = now + timedelta(hours=4)
-        elif quality == 3:
+        elif quality == 2:
             # Hard - review in 1 day
             next_review = now + timedelta(days=1)
+        elif quality == 3:
+            # Good - use calculated interval
+            next_review = now + timedelta(days=word_data["interval"])
         else:
-            # Good/Easy - use calculated interval
+            # Easy (4-5) - use calculated interval
             next_review = now + timedelta(days=word_data["interval"])
         
         word_data["next_review"] = next_review.isoformat()
@@ -317,14 +320,17 @@ class SpacedRepetition:
                 test_data["ease_factor"] = min(2.5, test_data["ease_factor"])
             
             # Calculate next review date
-            if quality == 0 or quality == 1 or quality == 2:
+            if quality == 0 or quality == 1:
                 # Again - review in 4 hours (same day)
                 next_review = now + timedelta(hours=4)
-            elif quality == 3:
+            elif quality == 2:
                 # Hard - review in 1 day
                 next_review = now + timedelta(days=1)
+            elif quality == 3:
+                # Good - use calculated interval
+                next_review = now + timedelta(days=test_data["interval"])
             else:
-                # Good/Easy - use calculated interval
+                # Easy (4-5) - use calculated interval
                 next_review = now + timedelta(days=test_data["interval"])
             
             # Format the preview
