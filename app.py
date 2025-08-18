@@ -182,6 +182,17 @@ def get_upcoming_reviews():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sr/words/<word_id>/next-review', methods=['GET'])
+def get_word_next_review(word_id):
+    """Get detailed information about when a word will be reviewed next"""
+    try:
+        review_info = sr_system.get_next_review_info(word_id)
+        return jsonify(review_info)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/sr/search', methods=['GET'])
 def search_words():
     """Search words by query"""

@@ -566,6 +566,100 @@
         .upcoming-days.today {
             background: #dc3545;
         }
+
+        .upcoming-days.urgent {
+            background: #dc3545;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .confidence-indicator {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .confidence-high { color: #28a745; }
+        .confidence-medium { color: #ffc107; }
+        .confidence-low { color: #dc3545; }
+
+        .scheduling-info {
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background: #f8f9fa;
+        }
+
+        .scheduling-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .scheduling-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .schedule-icon {
+            font-size: 24px;
+        }
+
+        .schedule-text {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .scheduling-note {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+            margin: 0;
+        }
+
+        .word-scheduling {
+            margin-top: 10px;
+        }
+
+        .schedule-info-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .schedule-info-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -642,11 +736,45 @@
                         <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
                     </div>
                     
-                    <div class="words-list" id="wordsList">
-                        <!-- Words will be loaded here -->
-                    </div>
-                </div>
-            </div>
+                                         <div class="words-list" id="wordsList">
+                         <!-- Words will be loaded here -->
+                     </div>
+                     
+                     <div class="scheduling-info">
+                         <h3>📅 Review Scheduling Explained</h3>
+                         <div class="scheduling-grid">
+                             <div class="schedule-item">
+                                 <div class="schedule-icon">🔄</div>
+                                 <div class="schedule-text">
+                                     <strong>Again (0-2):</strong> Review in <span class="highlight">1 day</span>
+                                 </div>
+                             </div>
+                             <div class="schedule-item">
+                                 <div class="schedule-icon">😰</div>
+                                 <div class="schedule-text">
+                                     <strong>Hard (3):</strong> Review in <span class="highlight">1 day</span>
+                                 </div>
+                             </div>
+                             <div class="schedule-item">
+                                 <div class="schedule-icon">😊</div>
+                                 <div class="schedule-text">
+                                     <strong>Good (4):</strong> Review in <span class="highlight">6 days</span>
+                                 </div>
+                             </div>
+                             <div class="schedule-item">
+                                 <div class="schedule-icon">🎯</div>
+                                 <div class="schedule-text">
+                                     <strong>Easy (5):</strong> Review in <span class="highlight">12+ days</span>
+                                 </div>
+                             </div>
+                         </div>
+                         <p class="scheduling-note">
+                             <strong>How it works:</strong> Your confidence rating determines when you'll see the word again. 
+                             Higher confidence = longer intervals. The system adapts to your learning pace!
+                         </p>
+                     </div>
+                 </div>
+             </div>
 
             <!-- Review Tab -->
             <div class="tab-content" id="review-tab">
@@ -863,13 +991,18 @@
                         <button class="delete-word-btn" onclick="deleteWord('${word.id}')">Delete</button>
                     </div>
                     <div class="word-translation">${word.translation}</div>
-                                         ${word.word_type ? `<div class="word-type">${word.word_type}</div>` : ''}
+                                                              ${word.word_type ? `<div class="word-type">${word.word_type}</div>` : ''}
                      ${word.example ? `<div class="word-example">"${word.example}"</div>` : ''}
                      ${word.notes ? `<div class="word-notes">${word.notes}</div>` : ''}
-                `;
-                wordsList.appendChild(wordElement);
-            });
-        }
+                     <div class="word-scheduling">
+                         <button class="schedule-info-btn" onclick="showScheduleInfo('${word.id}')">
+                             📅 Show Review Schedule
+                         </button>
+                     </div>
+                 `;
+                 wordsList.appendChild(wordElement);
+             });
+         }
 
         async function deleteWord(wordId) {
             if (!confirm('Are you sure you want to delete this word?')) return;
@@ -1110,23 +1243,81 @@
                 const itemElement = document.createElement('div');
                 itemElement.className = 'upcoming-item';
                 
-                let daysClass = 'upcoming-days';
-                let daysText = `${word.days_until} days`;
+                let timeClass = 'upcoming-days';
+                let timeText = word.human_readable;
                 
-                if (word.days_until === 0) {
-                    daysClass += ' today';
-                    daysText = 'Today';
-                } else if (word.days_until <= 2) {
-                    daysClass += ' soon';
+                // Determine urgency based on time until review
+                const totalSeconds = word.time_until.total_seconds();
+                if (totalSeconds < 3600) { // Less than 1 hour
+                    timeClass += ' urgent';
+                } else if (totalSeconds < 86400) { // Less than 1 day
+                    timeClass += ' today';
+                } else if (totalSeconds < 172800) { // Less than 2 days
+                    timeClass += ' soon';
                 }
                 
+                // Get confidence level
+                const confidence = getConfidenceLevel(word.ease_factor);
+                const confidenceClass = getConfidenceClass(word.ease_factor);
+                
                 itemElement.innerHTML = `
-                    <div class="upcoming-word">${word.word}</div>
-                    <div class="${daysClass}">${daysText}</div>
+                    <div class="upcoming-word">
+                        <div>${word.word}</div>
+                        <div class="confidence-indicator ${confidenceClass}">
+                            Confidence: ${confidence}
+                        </div>
+                    </div>
+                    <div class="${timeClass}">${timeText}</div>
                 `;
                 
                 upcomingList.appendChild(itemElement);
             });
+        }
+
+        function getConfidenceLevel(easeFactor) {
+            if (easeFactor >= 2.0) return 'Very High';
+            if (easeFactor >= 1.7) return 'High';
+            if (easeFactor >= 1.4) return 'Medium';
+            return 'Low';
+        }
+
+        function getConfidenceClass(easeFactor) {
+            if (easeFactor >= 1.7) return 'confidence-high';
+            if (easeFactor >= 1.4) return 'confidence-medium';
+            return 'confidence-low';
+        }
+
+        async function showScheduleInfo(wordId) {
+            try {
+                const response = await fetch(`/api/sr/words/${wordId}/next-review`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const confidence = getConfidenceLevel(data.ease_factor);
+                    const confidenceClass = getConfidenceClass(data.ease_factor);
+                    
+                    const message = `
+📅 Review Schedule for "${data.word}"
+
+⏰ Next Review: ${data.human_readable}
+🎯 Confidence Level: ${confidence}
+📊 Ease Factor: ${data.ease_factor}
+🔄 Total Reviews: ${data.review_count}
+
+💡 What this means:
+• Your confidence rating determines review intervals
+• Higher confidence = longer intervals between reviews
+• The system adapts to your learning pace
+                    `;
+                    
+                    alert(message);
+                } else {
+                    alert('Failed to load schedule info: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error loading schedule info:', error);
+                alert('Error loading schedule info');
+            }
         }
 
         // Search functionality

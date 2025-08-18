@@ -156,15 +156,73 @@ class SpacedRepetition:
         for word_data in self.vocabulary.values():
             next_review = datetime.fromisoformat(word_data["next_review"])
             if now < next_review <= end_date:
-                days_until = (next_review - now).days
+                time_until = next_review - now
                 upcoming.append({
                     **word_data,
-                    "days_until": days_until
+                    "time_until": time_until,
+                    "human_readable": self._format_time_interval(time_until)
                 })
         
         # Sort by when they're due
-        upcoming.sort(key=lambda x: x["days_until"])
+        upcoming.sort(key=lambda x: x["time_until"])
         return upcoming
+    
+    def _format_time_interval(self, time_delta: timedelta) -> str:
+        """Convert timedelta to human-readable format"""
+        total_seconds = int(time_delta.total_seconds())
+        
+        if total_seconds < 60:
+            return f"{total_seconds} seconds"
+        elif total_seconds < 3600:
+            minutes = total_seconds // 60
+            return f"{minutes} minute{'s' if minutes != 1 else ''}"
+        elif total_seconds < 86400:
+            hours = total_seconds // 3600
+            return f"{hours} hour{'s' if hours != 1 else ''}"
+        elif total_seconds < 604800:  # 7 days
+            days = total_seconds // 86400
+            return f"{days} day{'s' if days != 1 else ''}"
+        elif total_seconds < 2592000:  # 30 days
+            weeks = total_seconds // 604800
+            return f"{weeks} week{'s' if weeks != 1 else ''}"
+        else:
+            months = total_seconds // 2592000
+            return f"{months} month{'s' if months != 1 else ''}"
+    
+    def get_next_review_info(self, word_id: str) -> Dict:
+        """Get detailed information about when a word will be reviewed next"""
+        if word_id not in self.vocabulary:
+            raise ValueError("Word not found")
+        
+        word_data = self.vocabulary[word_id]
+        now = datetime.now()
+        next_review = datetime.fromisoformat(word_data["next_review"])
+        time_until = next_review - now
+        
+        # Calculate the confidence level based on ease factor
+        confidence = self._get_confidence_level(word_data["ease_factor"])
+        
+        return {
+            "word": word_data["word"],
+            "next_review": next_review.isoformat(),
+            "time_until": time_until.total_seconds(),
+            "human_readable": self._format_time_interval(time_until),
+            "confidence": confidence,
+            "ease_factor": word_data["ease_factor"],
+            "interval": word_data["interval"],
+            "review_count": word_data["review_count"]
+        }
+    
+    def _get_confidence_level(self, ease_factor: float) -> str:
+        """Convert ease factor to human-readable confidence level"""
+        if ease_factor >= 2.0:
+            return "Very High"
+        elif ease_factor >= 1.7:
+            return "High"
+        elif ease_factor >= 1.4:
+            return "Medium"
+        else:
+            return "Low"
     
     def search_words(self, query: str) -> List[Dict]:
         """Search words by word, translation, or notes"""
