@@ -529,47 +529,85 @@
             text-align: center;
         }
 
-        .upcoming-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .daily-upcoming-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
         }
 
-        .upcoming-item {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            border-left: 4px solid #28a745;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .daily-upcoming-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
         }
 
-        .upcoming-word {
-            font-weight: 600;
+        .daily-upcoming-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .daily-upcoming-card.today {
+            border-color: #dc3545;
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .daily-upcoming-card.tomorrow {
+            border-color: #ffc107;
+            background: linear-gradient(135deg, #ffc107, #e0a800);
             color: #333;
         }
 
-        .upcoming-days {
-            background: #28a745;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 15px;
+        .daily-upcoming-card.future {
+            border-color: #28a745;
+        }
+
+        .daily-date {
             font-size: 14px;
             font-weight: 600;
+            margin-bottom: 8px;
+            opacity: 0.8;
         }
 
-        .upcoming-days.soon {
-            background: #ffc107;
+        .daily-count {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
 
-        .upcoming-days.today {
-            background: #dc3545;
+        .daily-count.today {
+            color: white;
         }
 
-        .upcoming-days.urgent {
-            background: #dc3545;
-            animation: pulse 2s infinite;
+        .daily-count.tomorrow {
+            color: #333;
+        }
+
+        .daily-count.future {
+            color: #28a745;
+        }
+
+        .daily-label {
+            font-size: 12px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .daily-label.today {
+            color: white;
+        }
+
+        .daily-label.tomorrow {
+            color: #333;
+        }
+
+        .daily-label.future {
+            color: #28a745;
         }
 
         @keyframes pulse {
@@ -578,15 +616,7 @@
             100% { opacity: 1; }
         }
 
-        .confidence-indicator {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
 
-        .confidence-high { color: #28a745; }
-        .confidence-medium { color: #ffc107; }
-        .confidence-low { color: #dc3545; }
 
         .scheduling-info {
             padding: 20px;
@@ -740,39 +770,7 @@
                          <!-- Words will be loaded here -->
                      </div>
                      
-                     <div class="scheduling-info">
-                         <h3>📅 Review Scheduling Explained</h3>
-                         <div class="scheduling-grid">
-                             <div class="schedule-item">
-                                 <div class="schedule-icon">🔄</div>
-                                 <div class="schedule-text">
-                                     <strong>Again (0-2):</strong> Review in <span class="highlight">4 hours</span>
-                                 </div>
-                             </div>
-                             <div class="schedule-item">
-                                 <div class="schedule-icon">😰</div>
-                                 <div class="schedule-text">
-                                     <strong>Hard (3):</strong> Review in <span class="highlight">1 day</span>
-                                 </div>
-                             </div>
-                             <div class="schedule-item">
-                                 <div class="schedule-icon">😊</div>
-                                 <div class="schedule-text">
-                                     <strong>Good (4):</strong> Review in <span class="highlight">6 days</span>
-                                 </div>
-                             </div>
-                             <div class="schedule-item">
-                                 <div class="schedule-icon">🎯</div>
-                                 <div class="schedule-text">
-                                     <strong>Easy (5):</strong> Review in <span class="highlight">12+ days</span>
-                                 </div>
-                             </div>
-                         </div>
-                         <p class="scheduling-note">
-                             <strong>How it works:</strong> Your confidence rating determines when you'll see the word again. 
-                             Higher confidence = longer intervals. The system adapts to your learning pace!
-                         </p>
-                     </div>
+
                  </div>
              </div>
 
@@ -825,12 +823,12 @@
                          <!-- Stats will be loaded here -->
                      </div>
                      
-                     <div class="upcoming-reviews-section">
-                         <h3>Upcoming Reviews (Next 7 Days)</h3>
-                         <div class="upcoming-list" id="upcomingList">
-                             <!-- Upcoming reviews will be loaded here -->
-                         </div>
-                     </div>
+                                           <div class="upcoming-reviews-section">
+                          <h3>📅 Upcoming Reviews (Next 7 Days)</h3>
+                          <div class="daily-upcoming-grid" id="dailyUpcomingGrid">
+                              <!-- Daily upcoming counts will be loaded here -->
+                          </div>
+                      </div>
                  </div>
              </div>
         </div>
@@ -1194,16 +1192,16 @@
                 console.error('Error loading stats:', error);
             }
             
-            // Also load upcoming reviews
+            // Also load daily upcoming counts
             try {
-                const upcomingResponse = await fetch('/api/sr/upcoming?days=7');
-                const upcomingData = await upcomingResponse.json();
+                const dailyResponse = await fetch('/api/sr/daily-upcoming?days=7');
+                const dailyData = await dailyResponse.json();
                 
-                if (upcomingResponse.ok) {
-                    displayUpcomingReviews(upcomingData.upcoming);
+                if (dailyResponse.ok) {
+                    displayDailyUpcomingCounts(dailyData.daily_counts);
                 }
             } catch (error) {
-                console.error('Error loading upcoming reviews:', error);
+                console.error('Error loading daily upcoming counts:', error);
             }
         }
 
@@ -1229,48 +1227,49 @@
             `;
         }
 
-        function displayUpcomingReviews(upcoming) {
-            const upcomingList = document.getElementById('upcomingList');
+        function displayDailyUpcomingCounts(dailyCounts) {
+            const dailyGrid = document.getElementById('dailyUpcomingGrid');
             
-            if (upcoming.length === 0) {
-                upcomingList.innerHTML = '<p style="text-align: center; color: #666;">No upcoming reviews in the next 7 days! 🎉</p>';
+            if (!dailyCounts || dailyCounts.length === 0) {
+                dailyGrid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1 / -1;">No upcoming reviews in the next 7 days! 🎉</p>';
                 return;
             }
             
-            upcomingList.innerHTML = '';
+            dailyGrid.innerHTML = '';
             
-            upcoming.forEach(word => {
-                const itemElement = document.createElement('div');
-                itemElement.className = 'upcoming-item';
+            dailyCounts.forEach(day => {
+                const dayElement = document.createElement('div');
+                let cardClass = 'daily-upcoming-card';
+                let countClass = 'daily-count';
+                let labelClass = 'daily-label';
+                let dateClass = 'daily-date';
                 
-                let timeClass = 'upcoming-days';
-                let timeText = word.human_readable;
-                
-                // Determine urgency based on time until review
-                const totalSeconds = word.time_until.total_seconds();
-                if (totalSeconds < 3600) { // Less than 1 hour
-                    timeClass += ' urgent';
-                } else if (totalSeconds < 86400) { // Less than 1 day
-                    timeClass += ' today';
-                } else if (totalSeconds < 172800) { // Less than 2 days
-                    timeClass += ' soon';
+                // Determine styling based on day
+                if (day.day_offset === 0) {
+                    cardClass += ' today';
+                    countClass += ' today';
+                    labelClass += ' today';
+                    dateClass += ' today';
+                } else if (day.day_offset === 1) {
+                    cardClass += ' tomorrow';
+                    countClass += ' tomorrow';
+                    labelClass += ' tomorrow';
+                    dateClass += ' tomorrow';
+                } else {
+                    cardClass += ' future';
+                    countClass += ' future';
+                    labelClass += ' future';
+                    dateClass += ' future';
                 }
                 
-                // Get confidence level
-                const confidence = getConfidenceLevel(word.ease_factor);
-                const confidenceClass = getConfidenceClass(word.ease_factor);
-                
-                itemElement.innerHTML = `
-                    <div class="upcoming-word">
-                        <div>${word.word}</div>
-                        <div class="confidence-indicator ${confidenceClass}">
-                            Confidence: ${confidence}
-                        </div>
-                    </div>
-                    <div class="${timeClass}">${timeText}</div>
+                dayElement.className = cardClass;
+                dayElement.innerHTML = `
+                    <div class="${dateClass}">${day.date_label}</div>
+                    <div class="${countClass}">${day.count}</div>
+                    <div class="${labelClass}">${day.count === 1 ? 'Review' : 'Reviews'}</div>
                 `;
                 
-                upcomingList.appendChild(itemElement);
+                dailyGrid.appendChild(dayElement);
             });
         }
 

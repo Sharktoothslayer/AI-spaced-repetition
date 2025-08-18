@@ -182,6 +182,16 @@ def get_upcoming_reviews():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sr/daily-upcoming', methods=['GET'])
+def get_daily_upcoming_counts():
+    """Get daily counts of upcoming reviews (Anki-style)"""
+    try:
+        days_ahead = request.args.get('days', 7, type=int)
+        daily_counts = sr_system.get_daily_upcoming_counts(days_ahead)
+        return jsonify({'daily_counts': daily_counts})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/sr/words/<word_id>/next-review', methods=['GET'])
 def get_word_next_review(word_id):
     """Get detailed information about when a word will be reviewed next"""

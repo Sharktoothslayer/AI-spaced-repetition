@@ -175,6 +175,39 @@ class SpacedRepetition:
         # Sort by when they're due
         upcoming.sort(key=lambda x: x["time_until"])
         return upcoming
+
+    def get_daily_upcoming_counts(self, days_ahead: int = 7) -> List[Dict]:
+        """Get count of words due for review each day in the next X days (Anki-style)"""
+        now = datetime.now()
+        daily_counts = []
+        
+        for day_offset in range(days_ahead + 1):
+            target_date = now + timedelta(days=day_offset)
+            start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = start_of_day + timedelta(days=1)
+            
+            count = 0
+            for word_data in self.vocabulary.values():
+                next_review = datetime.fromisoformat(word_data["next_review"])
+                if start_of_day <= next_review < end_of_day:
+                    count += 1
+            
+            # Format the date for display
+            if day_offset == 0:
+                date_label = "Today"
+            elif day_offset == 1:
+                date_label = "Tomorrow"
+            else:
+                date_label = target_date.strftime("%A, %b %d")
+            
+            daily_counts.append({
+                "day_offset": day_offset,
+                "date": target_date.isoformat(),
+                "date_label": date_label,
+                "count": count
+            })
+        
+        return daily_counts
     
     def _format_time_interval(self, time_delta: timedelta) -> str:
         """Convert timedelta to human-readable format"""
