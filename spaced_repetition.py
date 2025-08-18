@@ -245,30 +245,19 @@ class SpacedRepetition:
         next_review = datetime.fromisoformat(word_data["next_review"])
         time_until = next_review - now
         
-        # Calculate the confidence level based on ease factor
-        confidence = self._get_confidence_level(word_data["ease_factor"])
-        
         return {
             "word": word_data["word"],
-            "next_review": next_review.isoformat(),
-            "time_until": time_until.total_seconds(),
+            "translation": word_data["translation"],
+            "next_review": word_data["next_review"],
             "human_readable": self._format_time_interval(time_until),
-            "confidence": confidence,
-            "ease_factor": word_data["ease_factor"],
             "interval": word_data["interval"],
-            "review_count": word_data["review_count"]
+            "ease_factor": word_data["ease_factor"],
+            "review_count": word_data["review_count"],
+            "correct_count": word_data["correct_count"],
+            "incorrect_count": word_data["incorrect_count"]
         }
     
-    def _get_confidence_level(self, ease_factor: float) -> str:
-        """Convert ease factor to human-readable confidence level"""
-        if ease_factor >= 2.0:
-            return "Very High"
-        elif ease_factor >= 1.7:
-            return "High"
-        elif ease_factor >= 1.4:
-            return "Medium"
-        else:
-            return "Low"
+
     
     def search_words(self, query: str) -> List[Dict]:
         """Search words by word, translation, or notes"""
