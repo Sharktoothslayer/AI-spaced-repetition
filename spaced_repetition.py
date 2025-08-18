@@ -2,11 +2,14 @@ import json
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+import pytz
 
 class SpacedRepetition:
     def __init__(self, data_file: str = "vocabulary.json"):
         self.data_file = data_file
         self.vocabulary = self.load_vocabulary()
+        # Melbourne timezone
+        self.melbourne_tz = pytz.timezone('Australia/Melbourne')
         
     def load_vocabulary(self) -> Dict:
         """Load vocabulary from JSON file"""
@@ -27,6 +30,7 @@ class SpacedRepetition:
         """Add a new word to the vocabulary"""
         word_id = str(int(time.time() * 1000))  # Unique ID based on timestamp
         
+        now = datetime.now(self.melbourne_tz)
         word_data = {
             "id": word_id,
             "word": word,
@@ -34,9 +38,9 @@ class SpacedRepetition:
             "example": example,
             "word_type": word_type,
             "notes": notes,
-            "created": datetime.now().isoformat(),
+            "created": now.isoformat(),
             "last_reviewed": None,
-            "next_review": datetime.now().isoformat(),
+            "next_review": now.isoformat(),
             "interval": 0,  # Days until next review
             "ease_factor": 2.5,  # Anki's default ease factor
             "review_count": 0,
@@ -58,7 +62,7 @@ class SpacedRepetition:
     
     def get_due_words(self) -> List[Dict]:
         """Get words that are due for review"""
-        now = datetime.now()
+        now = datetime.now(self.melbourne_tz)
         due_words = []
         
         for word_data in self.vocabulary.values():
@@ -88,7 +92,7 @@ class SpacedRepetition:
             raise ValueError("Word not found")
         
         word_data = self.vocabulary[word_id]
-        now = datetime.now()
+        now = datetime.now(self.melbourne_tz)
         
         # Update review statistics
         word_data["last_reviewed"] = now.isoformat()
@@ -158,7 +162,7 @@ class SpacedRepetition:
     
     def get_upcoming_reviews(self, days_ahead: int = 7) -> List[Dict]:
         """Get words that will be due for review in the next X days"""
-        now = datetime.now()
+        now = datetime.now(self.melbourne_tz)
         end_date = now + timedelta(days=days_ahead)
         upcoming = []
         
@@ -178,7 +182,7 @@ class SpacedRepetition:
 
     def get_daily_upcoming_counts(self, days_ahead: int = 7) -> List[Dict]:
         """Get count of words due for review each day in the next X days (Anki-style)"""
-        now = datetime.now()
+        now = datetime.now(self.melbourne_tz)
         daily_counts = []
         
         for day_offset in range(days_ahead + 1):
@@ -237,7 +241,7 @@ class SpacedRepetition:
             raise ValueError("Word not found")
         
         word_data = self.vocabulary[word_id]
-        now = datetime.now()
+        now = datetime.now(self.melbourne_tz)
         next_review = datetime.fromisoformat(word_data["next_review"])
         time_until = next_review - now
         
