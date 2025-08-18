@@ -67,6 +67,9 @@ class SpacedRepetition:
         
         for word_data in self.vocabulary.values():
             next_review = datetime.fromisoformat(word_data["next_review"])
+            # Make naive datetime timezone-aware for comparison
+            if next_review.tzinfo is None:
+                next_review = self.melbourne_tz.localize(next_review)
             if next_review <= now:
                 due_words.append(word_data)
         
@@ -168,6 +171,9 @@ class SpacedRepetition:
         
         for word_data in self.vocabulary.values():
             next_review = datetime.fromisoformat(word_data["next_review"])
+            # Make naive datetime timezone-aware for comparison
+            if next_review.tzinfo is None:
+                next_review = self.melbourne_tz.localize(next_review)
             if now < next_review <= end_date:
                 time_until = next_review - now
                 upcoming.append({
@@ -193,6 +199,9 @@ class SpacedRepetition:
             count = 0
             for word_data in self.vocabulary.values():
                 next_review = datetime.fromisoformat(word_data["next_review"])
+                # Make naive datetime timezone-aware for comparison
+                if next_review.tzinfo is None:
+                    next_review = self.melbourne_tz.localize(next_review)
                 if start_of_day <= next_review < end_of_day:
                     count += 1
             
@@ -243,6 +252,9 @@ class SpacedRepetition:
         word_data = self.vocabulary[word_id]
         now = datetime.now(self.melbourne_tz)
         next_review = datetime.fromisoformat(word_data["next_review"])
+        # Make naive datetime timezone-aware for comparison
+        if next_review.tzinfo is None:
+            next_review = self.melbourne_tz.localize(next_review)
         time_until = next_review - now
         
         return {
