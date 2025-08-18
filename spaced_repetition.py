@@ -99,7 +99,7 @@ class SpacedRepetition:
         else:
             word_data["incorrect_count"] += 1
         
-        # Calculate new interval using SuperMemo 2 algorithm
+        # Calculate new interval using improved SuperMemo 2 algorithm
         if quality < 3:
             # Incorrect response - reset interval
             word_data["interval"] = 0
@@ -124,8 +124,17 @@ class SpacedRepetition:
             # Cap ease factor
             word_data["ease_factor"] = min(2.5, word_data["ease_factor"])
         
-        # Calculate next review date
-        next_review = now + timedelta(days=word_data["interval"])
+        # Calculate next review date with improved intervals
+        if quality == 0 or quality == 1 or quality == 2:
+            # Again - review in 4 hours (same day)
+            next_review = now + timedelta(hours=4)
+        elif quality == 3:
+            # Hard - review in 1 day
+            next_review = now + timedelta(days=1)
+        else:
+            # Good/Easy - use calculated interval
+            next_review = now + timedelta(days=word_data["interval"])
+        
         word_data["next_review"] = next_review.isoformat()
         
         self.save_vocabulary()

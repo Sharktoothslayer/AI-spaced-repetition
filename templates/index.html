@@ -746,7 +746,7 @@
                              <div class="schedule-item">
                                  <div class="schedule-icon">🔄</div>
                                  <div class="schedule-text">
-                                     <strong>Again (0-2):</strong> Review in <span class="highlight">1 day</span>
+                                     <strong>Again (0-2):</strong> Review in <span class="highlight">4 hours</span>
                                  </div>
                              </div>
                              <div class="schedule-item">
@@ -1296,7 +1296,7 @@
                     const confidence = getConfidenceLevel(data.ease_factor);
                     const confidenceClass = getConfidenceClass(data.ease_factor);
                     
-                    const message = `
+                                         const message = `
 📅 Review Schedule for "${data.word}"
 
 ⏰ Next Review: ${data.human_readable}
@@ -1305,10 +1305,13 @@
 🔄 Total Reviews: ${data.review_count}
 
 💡 What this means:
-• Your confidence rating determines review intervals
+• Again (0-2): Review in 4 hours (same day)
+• Hard (3): Review in 1 day
+• Good (4): Review in 6 days
+• Easy (5): Review in 12+ days
 • Higher confidence = longer intervals between reviews
 • The system adapts to your learning pace
-                    `;
+                     `;
                     
                     alert(message);
                 } else {
