@@ -75,13 +75,13 @@ class SpacedRepetition:
                 time_until = next_review - now
                 due_words.append({
                     **word_data,
-                    "time_until": time_until,
+                    "time_until_seconds": int(time_until.total_seconds()),  # Convert to integer seconds
                     "human_readable": self._format_time_interval(time_until),
                     "is_overdue": time_until.total_seconds() < 0
                 })
         
         # Sort by how overdue they are (most overdue first)
-        due_words.sort(key=lambda x: x["time_until"])
+        due_words.sort(key=lambda x: x["time_until_seconds"])
         return due_words
     
     def get_overdue_words(self) -> List[Dict]:
@@ -197,13 +197,13 @@ class SpacedRepetition:
                 time_until = next_review - now
                 upcoming.append({
                     **word_data,
-                    "time_until": time_until,
+                    "time_until_seconds": int(time_until.total_seconds()),  # Convert to integer seconds
                     "human_readable": self._format_time_interval(time_until),
                     "is_overdue": time_until.total_seconds() < 0
                 })
         
         # Sort by urgency: overdue first (most overdue first), then future reviews
-        upcoming.sort(key=lambda x: (x["is_overdue"], x["time_until"]))
+        upcoming.sort(key=lambda x: (x["is_overdue"], x["time_until_seconds"]))
         return upcoming
 
     def get_daily_upcoming_counts(self, days_ahead: int = 7) -> List[Dict]:
@@ -304,6 +304,7 @@ class SpacedRepetition:
             "translation": word_data["translation"],
             "next_review": word_data["next_review"],
             "human_readable": self._format_time_interval(time_until),
+            "time_until_seconds": int(time_until.total_seconds()),  # Convert to integer seconds
             "interval": word_data["interval"],
             "ease_factor": word_data["ease_factor"],
             "review_count": word_data["review_count"],
