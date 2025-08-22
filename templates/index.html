@@ -887,6 +887,8 @@
                         <h1>Review Words</h1>
                         <div class="review-stats">
                             <span id="dueCount">0</span> words due
+                            <button id="refreshReviewBtn" class="refresh-btn" style="margin-left: 15px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 Refresh</button>
+                            <button id="debugReviewBtn" class="debug-btn" style="margin-left: 10px; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">🐛 Debug</button>
                         </div>
                     </div>
                     
@@ -1234,18 +1236,26 @@
         // Review System
         async function loadReview() {
             try {
+                console.log('Loading review words...');
                 const response = await fetch('/api/sr/due');
                 const data = await response.json();
                 
+                console.log('Review response:', response.status, data);
+                
                 if (response.ok) {
                     reviewWords = data.words;
+                    console.log('Review words loaded:', reviewWords);
                     document.getElementById('dueCount').textContent = reviewWords.length;
                     
                     if (reviewWords.length > 0) {
+                        console.log('Starting review with word:', reviewWords[0]);
                         startReview();
                     } else {
+                        console.log('No words to review, showing no reviews message');
                         showNoReviews();
                     }
+                } else {
+                    console.error('Failed to load review words:', data.error);
                 }
             } catch (error) {
                 console.error('Error loading review:', error);
@@ -1254,6 +1264,7 @@
 
         function startReview() {
             currentReviewWord = reviewWords[0];
+            console.log('Starting review for word:', currentReviewWord);
             
             document.getElementById('reviewCard').style.display = 'block';
             document.getElementById('noReviews').style.display = 'none';
@@ -1261,6 +1272,7 @@
             document.getElementById('reviewWord').textContent = currentReviewWord.word;
             document.getElementById('cardBack').style.display = 'none';
             
+            console.log('Review card displayed, loading preview...');
             // Load preview for this word
             loadReviewPreview(currentReviewWord.id);
         }
@@ -1325,6 +1337,54 @@
                 reviewWord(quality);
             });
         });
+
+        // Refresh review button
+        document.getElementById('refreshReviewBtn').addEventListener('click', () => {
+            console.log('Manual refresh requested');
+            loadReview();
+        });
+
+        // Debug review button
+        document.getElementById('debugReviewBtn').addEventListener('click', () => {
+            console.log('Debug requested');
+            debugDueWords();
+        });
+
+        // Debug function to check due words
+        async function debugDueWords() {
+            try {
+                console.log('=== DEBUG: Checking due words ===');
+                const response = await fetch('/api/sr/due');
+                const data = await response.json();
+                console.log('Due words response:', data);
+                
+                if (data.words && data.words.length > 0) {
+                    console.log('Due words found:', data.words.length);
+                    data.words.forEach((word, index) => {
+                        console.log(`Word ${index + 1}:`, {
+                            id: word.id,
+                            word: word.word,
+                            translation: word.translation,
+                            next_review: word.next_review,
+                            human_readable: word.human_readable,
+                            is_overdue: word.is_overdue
+                        });
+                    });
+                } else {
+                    console.log('No due words found');
+                }
+                
+                // Also check all words
+                const allResponse = await fetch('/api/sr/words');
+                const allData = await allResponse.json();
+                console.log('All words:', allData.words.length);
+                allData.words.forEach(word => {
+                    console.log(`Word: ${word.word}, Next Review: ${word.next_review}`);
+                });
+            } catch (error) {
+                console.error('Debug error:', error);
+            }
+        }
 
         async function reviewWord(quality) {
             try {
