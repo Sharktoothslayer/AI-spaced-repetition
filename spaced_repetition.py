@@ -61,7 +61,7 @@ class SpacedRepetition:
         return False
     
     def get_due_words(self) -> List[Dict]:
-        """Get words that are due for review"""
+        """Get words that are due for review (including overdue)"""
         now = datetime.now(self.melbourne_tz)
         due_words = []
         
@@ -71,11 +71,23 @@ class SpacedRepetition:
             if next_review.tzinfo is None:
                 next_review = self.melbourne_tz.localize(next_review)
             if next_review <= now:
-                due_words.append(word_data)
+                # Calculate how overdue the word is
+                time_until = next_review - now
+                due_words.append({
+                    **word_data,
+                    "time_until": time_until,
+                    "human_readable": self._format_time_interval(time_until),
+                    "is_overdue": time_until.total_seconds() < 0
+                })
         
         # Sort by how overdue they are (most overdue first)
-        due_words.sort(key=lambda x: datetime.fromisoformat(x["next_review"]))
+        due_words.sort(key=lambda x: x["time_until"])
         return due_words
+    
+    def get_overdue_words(self) -> List[Dict]:
+        """Get only overdue words (words past their review date)"""
+        due_words = self.get_due_words()
+        return [word for word in due_words if word.get("is_overdue", False)]
     
     def get_all_words(self) -> List[Dict]:
         """Get all vocabulary words"""
@@ -169,7 +181,7 @@ class SpacedRepetition:
         }
     
     def get_upcoming_reviews(self, days_ahead: int = 7) -> List[Dict]:
-        """Get words that will be due for review in the next X days"""
+        """Get words that will be due for review in the next X days (including overdue)"""
         now = datetime.now(self.melbourne_tz)
         end_date = now + timedelta(days=days_ahead)
         upcoming = []
@@ -179,16 +191,19 @@ class SpacedRepetition:
             # Make naive datetime timezone-aware for comparison
             if next_review.tzinfo is None:
                 next_review = self.melbourne_tz.localize(next_review)
-            if now < next_review <= end_date:
+            
+            # Include overdue words and words due in the next X days
+            if next_review <= end_date:
                 time_until = next_review - now
                 upcoming.append({
                     **word_data,
                     "time_until": time_until,
-                    "human_readable": self._format_time_interval(time_until)
+                    "human_readable": self._format_time_interval(time_until),
+                    "is_overdue": time_until.total_seconds() < 0
                 })
         
-        # Sort by when they're due
-        upcoming.sort(key=lambda x: x["time_until"])
+        # Sort by urgency: overdue first (most overdue first), then future reviews
+        upcoming.sort(key=lambda x: (x["is_overdue"], x["time_until"]))
         return upcoming
 
     def get_daily_upcoming_counts(self, days_ahead: int = 7) -> List[Dict]:
@@ -231,6 +246,28 @@ class SpacedRepetition:
         """Convert timedelta to human-readable format"""
         total_seconds = int(time_delta.total_seconds())
         
+        # Handle overdue words (negative time)
+        if total_seconds < 0:
+            abs_seconds = abs(total_seconds)
+            if abs_seconds < 60:
+                return f"Overdue by {abs_seconds} seconds"
+            elif abs_seconds < 3600:
+                minutes = abs_seconds // 60
+                return f"Overdue by {minutes} minute{'s' if minutes != 1 else ''}"
+            elif abs_seconds < 86400:
+                hours = abs_seconds // 3600
+                return f"Overdue by {hours} hour{'s' if hours != 1 else ''}"
+            elif abs_seconds < 604800:  # 7 days
+                days = abs_seconds // 86400
+                return f"Overdue by {days} day{'s' if days != 1 else ''}"
+            elif abs_seconds < 2592000:  # 30 days
+                weeks = abs_seconds // 604800
+                return f"Overdue by {weeks} week{'s' if weeks != 1 else ''}"
+            else:
+                months = abs_seconds // 2592000
+                return f"Overdue by {months} month{'s' if months != 1 else ''}"
+        
+        # Handle future reviews (positive time)
         if total_seconds < 60:
             return f"{total_seconds} seconds"
         elif total_seconds < 3600:
@@ -271,7 +308,8 @@ class SpacedRepetition:
             "ease_factor": word_data["ease_factor"],
             "review_count": word_data["review_count"],
             "correct_count": word_data["correct_count"],
-            "incorrect_count": word_data["incorrect_count"]
+            "incorrect_count": word_data["incorrect_count"],
+            "is_overdue": time_until.total_seconds() < 0
         }
     
     def get_review_preview(self, word_id: str) -> Dict:

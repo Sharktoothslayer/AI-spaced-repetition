@@ -171,10 +171,19 @@ def delete_word(word_id):
 
 @app.route('/api/sr/due', methods=['GET'])
 def get_due_words():
-    """Get words that are due for review"""
+    """Get words that are due for review (including overdue)"""
     try:
         due_words = sr_system.get_due_words()
         return jsonify({'words': due_words})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sr/overdue', methods=['GET'])
+def get_overdue_words():
+    """Get only overdue words"""
+    try:
+        overdue_words = sr_system.get_overdue_words()
+        return jsonify({'words': overdue_words})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
