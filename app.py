@@ -70,17 +70,18 @@ def ai_translate():
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'Sei un assistente di traduzione italiano. Per ogni parola fornita, rispondi SOLO con un JSON nel seguente formato esatto:\n{\n  "translation": "traduzione in inglese",\n  "example": "frase di esempio in italiano che usa questa parola",\n  "word_type": "tipo di parola (verbo, sostantivo, aggettivo, avverbio, ecc.)"\n}\n\nNon includere altro testo, solo il JSON.'
+                    'content': 'You are an Italian translation assistant. For each Italian word provided, respond ONLY with a JSON in this exact format:\n{\n  "translation": "English translation",\n  "example": "Example sentence in Italian using this word",\n  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"\n}\n\nIMPORTANT:\n- word_type must be ONLY ONE English word type\n- Do not include multiple types separated by slashes\n- Do not include any other text, only the JSON\n- Use standard English grammar terms'
                 },
                 {
                     'role': 'user',
-                    'content': f'Traduci questa parola italiana: {word}'
+                    'content': f'Translate this Italian word to English and provide exactly ONE word type: {word}'
                 }
             ],
             'stream': False
         }
         
         print(f"AI translation request for word: {word}")
+        print(f"System prompt: {ollama_request['messages'][0]['content']}")
         
         # Send request to Ollama
         response = requests.post(
@@ -98,10 +99,45 @@ def ai_translate():
                 import json
                 translation_data = json.loads(ai_message)
                 
+                # Clean up word_type to ensure only one type
+                word_type = translation_data.get('word_type', '')
+                print(f"Original word_type from AI: '{word_type}'")
+                
+                if '/' in word_type or '\\' in word_type:
+                    # If multiple types are provided, take the first one
+                    word_type = word_type.split('/')[0].split('\\')[0].strip()
+                    print(f"Cleaned word_type after splitting: '{word_type}'")
+                
+                # Ensure word_type is a standard English grammar term
+                standard_types = ['verb', 'noun', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection']
+                if word_type.lower() not in standard_types:
+                    # If not a standard type, try to map common variations
+                    word_type_lower = word_type.lower()
+                    if 'verbo' in word_type_lower or 'verb' in word_type_lower:
+                        word_type = 'verb'
+                    elif 'sostantivo' in word_type_lower or 'noun' in word_type_lower:
+                        word_type = 'noun'
+                    elif 'aggettivo' in word_type_lower or 'adjective' in word_type_lower:
+                        word_type = 'adjective'
+                    elif 'avverbio' in word_type_lower or 'adverb' in word_type_lower:
+                        word_type = 'adverb'
+                    elif 'pronome' in word_type_lower or 'pronoun' in word_type_lower:
+                        word_type = 'pronoun'
+                    elif 'preposizione' in word_type_lower or 'preposition' in word_type_lower:
+                        word_type = 'preposition'
+                    elif 'congiunzione' in word_type_lower or 'conjunction' in word_type_lower:
+                        word_type = 'conjunction'
+                    elif 'interiezione' in word_type_lower or 'interjection' in word_type_lower:
+                        word_type = 'interjection'
+                    else:
+                        word_type = 'noun'  # Default fallback
+                
+                print(f"Final cleaned word_type: '{word_type}'")
+                
                 return jsonify({
                     'translation': translation_data.get('translation', ''),
                     'example': translation_data.get('example', ''),
-                    'word_type': translation_data.get('word_type', ''),
+                    'word_type': word_type,
                     'success': True
                 })
             except json.JSONDecodeError:
