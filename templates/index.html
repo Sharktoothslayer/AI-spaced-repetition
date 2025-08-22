@@ -1174,6 +1174,12 @@
                  // Get current vocabulary state
                  const isStrictMode = document.getElementById('vocabularyToggle').checked;
                  
+                 console.log('📤 Sending message with settings:');
+                 console.log('  - Strict Mode:', isStrictMode);
+                 console.log('  - Vocabulary Size:', currentVocabulary.length);
+                 console.log('  - Available Words:', currentVocabulary);
+                 console.log('  - Message:', message);
+                 
                  const response = await fetch('/api/chat', {
                      method: 'POST',
                      headers: {
@@ -1189,6 +1195,8 @@
                  const data = await response.json();
                  
                  if (response.ok) {
+                     console.log('📥 AI Response received:', data.response);
+                     
                      // Process AI response to highlight new words
                      const processedResponse = processAIResponse(data.response);
                      addMessage(processedResponse, false);
@@ -1227,10 +1235,16 @@
              console.log('Current vocabulary size:', currentVocabulary.length);
              console.log('Response:', response);
              
-             // Enhanced Italian word detection with multiple regex patterns
+             // Enhanced Italian word detection with multiple regex patterns to catch ALL Italian words
              const patterns = [
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]?\b/gi,  // Standard Italian words
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,  // Fallback pattern
+                 // Pattern 1: Standard Italian words (including short ones like "di", "a", "o", "il")
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
+                 // Pattern 2: Catch very short words that might be missed
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi,
+                 // Pattern 3: Catch words with apostrophes (like "dell'", "nell'")
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
+                 // Pattern 4: Catch contractions (like "del", "nel", "al")
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi
              ];
              
              let allWords = [];
@@ -1251,8 +1265,8 @@
              uniqueWords.forEach(word => {
                  const lowerWord = word.toLowerCase();
                  
-                 // Skip if we've already processed this word or if it's too short
-                 if (processedWords.has(lowerWord) || lowerWord.length < 3) {
+                 // Skip if we've already processed this word
+                 if (processedWords.has(lowerWord)) {
                      return;
                  }
                  
@@ -1412,13 +1426,20 @@
              
              // Update toggle label to show current mode
              const toggleLabel = document.querySelector('.toggle-label');
-             if (document.getElementById('vocabularyToggle').checked) {
+             const isStrictMode = document.getElementById('vocabularyToggle').checked;
+             
+             if (isStrictMode) {
                  toggleLabel.textContent = 'Strict Mode: ON';
                  toggleLabel.style.color = '#28a745';
+                 console.log('🟢 STRICT MODE ENABLED - AI should use ONLY vocabulary words');
              } else {
                  toggleLabel.textContent = 'Learning Mode: ON';
                  toggleLabel.style.color = '#ffc107';
+                 console.log('🟡 LEARNING MODE ENABLED - AI can introduce 1-2 new words');
              }
+             
+             // Log current vocabulary for debugging
+             console.log('Current vocabulary for AI:', currentVocabulary);
          });
 
          // Tab Navigation
@@ -1459,15 +1480,33 @@
                  // Load current vocabulary for chat system
          async function loadCurrentVocabulary() {
              try {
+                 console.log('🔄 Loading current vocabulary for chat system...');
                  const response = await fetch('/api/sr/words');
                  const data = await response.json();
                  
                  if (response.ok) {
                      currentVocabulary = data.words.map(word => word.word.toLowerCase());
-                     console.log('Current vocabulary loaded for chat:', currentVocabulary.length, 'words');
+                     console.log('✅ Vocabulary loaded successfully:');
+                     console.log('  - Total words:', currentVocabulary.length);
+                     console.log('  - Words:', currentVocabulary);
+                     
+                     // Update toggle label if page is already loaded
+                     const toggleLabel = document.querySelector('.toggle-label');
+                     if (toggleLabel) {
+                         const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                         if (isStrictMode) {
+                             toggleLabel.textContent = 'Strict Mode: ON';
+                             toggleLabel.style.color = '#28a745';
+                         } else {
+                             toggleLabel.textContent = 'Learning Mode: ON';
+                             toggleLabel.style.color = '#ffc107';
+                         }
+                     }
+                 } else {
+                     console.error('❌ Failed to load vocabulary:', data.error);
                  }
              } catch (error) {
-                 console.error('Error loading vocabulary for chat:', error);
+                 console.error('❌ Error loading vocabulary for chat:', error);
              }
          }
 

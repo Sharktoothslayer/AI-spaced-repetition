@@ -322,7 +322,7 @@ def chat():
             # Strict mode: ONLY use vocabulary words - NO EXCEPTIONS
             system_content = f"""Sei un tutor di italiano in modalità VOCABOLARIO STRETTO. 
 
-REGOLE ASSOLUTE:
+REGOLE ASSOLUTE E INVIOLABILI:
 1. Rispondi SEMPRE in italiano, usando un linguaggio naturale ma corretto
 2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
 3. Puoi usare SOLO e ESCLUSIVAMENTE queste parole: {', '.join(current_vocabulary)}
@@ -334,15 +334,24 @@ IMPORTANTE:
 - NON puoi usare NESSUNA parola che non sia in questa lista
 - Se devi esprimere qualcosa ma non hai le parole giuste, riformula usando SOLO il vocabolario fornito
 - Se non riesci a esprimere un concetto con le parole disponibili, usa sinonimi o riformula completamente
-- NON introdurre mai nuove parole in modalità stretta"""
+- NON introdurre mai nuove parole in modalità stretta
+- Se la frase non può essere completata con le parole disponibili, usa frasi più semplici o incomplete
+- È meglio una frase semplice e corretta che una frase complessa con parole non autorizzate"""
         else:
-            # Learning mode: mostly vocabulary words with some new words
+            # Learning mode: MAX 2 new words per sentence, prioritize word limits over sentence completion
             system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
 1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
 2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
 3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
-4. Introduci 1-2 NUOVE parole italiane per risposta che NON sono nel vocabolario
+4. Introduci MASSIMO 2 NUOVE parole italiane per risposta che NON sono nel vocabolario
 5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+
+REGOLE IMPORTANTI:
+- MASSIMO 2 nuove parole per risposta
+- Se non puoi completare una frase con solo 2 nuove parole, usa frasi più semplici
+- È meglio una frase semplice e corretta che una frase complessa con troppe parole nuove
+- Priorità: Rispetta il limite di 2 nuove parole > Completare la frase
+- Usa principalmente parole familiari dal vocabolario fornito
 
 Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
 Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto."""
@@ -357,7 +366,7 @@ Rendi le nuove parole contestualmente chiare così lo studente può capirle dal 
                 },
                 {
                     'role': 'user',
-                    'content': message
+                    'content': f"{message}\n\n{'⚠️ RICORDA: Usa SOLO le parole del vocabolario fornito!' if strict_mode else ''}"
                 }
             ],
             'stream': False
@@ -379,6 +388,23 @@ Rendi le nuove parole contestualmente chiare così lo studente può capirle dal 
         if response.status_code == 200:
             ollama_response = response.json()
             ai_message = ollama_response.get('message', {}).get('content', 'Sorry, I could not generate a response.')
+            
+            # Validate response in strict mode
+            if strict_mode:
+                print(f"Validating strict mode response...")
+                # Check if response contains any words not in vocabulary
+                import re
+                # Simple word detection for validation
+                words_in_response = re.findall(r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b', ai_message.lower())
+                unauthorized_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                
+                if unauthorized_words:
+                    print(f"WARNING: AI used unauthorized words in strict mode: {unauthorized_words}")
+                    # Force AI to use only vocabulary words by regenerating
+                    ai_message = f"Mi dispiace, devo usare solo le parole del tuo vocabolario. Provo a riformulare: {ai_message}"
+                    # For now, just log the warning. In production, you might want to regenerate the response
+                else:
+                    print(f"Strict mode validation passed - all words are from vocabulary")
             
             return jsonify({
                 'response': ai_message,
