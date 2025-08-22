@@ -283,18 +283,47 @@ def chat():
             return jsonify({'error': 'No JSON data received'}), 400
             
         message = data.get('message', '')
+        strict_mode = data.get('strict_mode', False)
+        current_vocabulary = data.get('current_vocabulary', [])
+        
         print(f"Message: {message}")
+        print(f"Strict mode: {strict_mode}")
+        print(f"Current vocabulary size: {len(current_vocabulary)}")
         
         if not message:
             return jsonify({'error': 'Message is required'}), 400
         
-        # Prepare request to Ollama with Italian tutor system prompt
+        # Prepare the system prompt based on mode
+        if strict_mode:
+            # Strict mode: only use vocabulary words
+            system_content = f"""Sei un tutor di italiano in modalità VOCABOLARIO STRETTO. Il tuo ruolo è:
+            1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
+            2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
+            3. Usa SOLO parole che sono nel vocabolario dello studente
+            4. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+            
+            VOCABOLARIO DISPONIBILE: {', '.join(current_vocabulary)}
+            
+            IMPORTANTE: Puoi usare SOLO queste parole. Se devi esprimere qualcosa ma non hai le parole giuste, riformula usando solo il vocabolario fornito."""
+        else:
+            # Learning mode: mostly vocabulary words with some new words
+            system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
+            1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
+            2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
+            3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
+            4. Introduci 1-2 NUOVE parole italiane per risposta che NON sono nel vocabolario
+            5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+            
+            Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
+            Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto."""
+        
+        # Prepare request to Ollama with vocabulary-aware system prompt
         ollama_request = {
             'model': DEFAULT_MODEL,
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'Sei un tutor di italiano amichevole e conversazionale. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali, come se stessi parlando con un amico. Usa un tono incoraggiante e non troppo formale, ma sempre grammaticalmente corretto. Sprigiona in nuove parole e espressioni quando possibile per aiutare lo studente a imparare.'
+                    'content': system_content
                 },
                 {
                     'role': 'user',

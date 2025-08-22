@@ -117,10 +117,138 @@
             text-align: center;
         }
 
-        .chat-header h1 {
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
+                 .chat-header h1 {
+             font-size: 1.5rem;
+             font-weight: 600;
+             margin-bottom: 10px;
+         }
+
+         .chat-controls {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             flex-wrap: wrap;
+             gap: 15px;
+         }
+
+         .vocabulary-toggle {
+             display: flex;
+             align-items: center;
+             gap: 10px;
+             background: rgba(255, 255, 255, 0.1);
+             padding: 8px 15px;
+             border-radius: 20px;
+         }
+
+         .toggle-label {
+             font-size: 14px;
+             font-weight: 500;
+             color: white;
+         }
+
+         /* Toggle Switch Styles */
+         .toggle-switch {
+             position: relative;
+             display: inline-block;
+             width: 50px;
+             height: 24px;
+         }
+
+         .toggle-switch input {
+             opacity: 0;
+             width: 0;
+             height: 0;
+         }
+
+         .slider {
+             position: absolute;
+             cursor: pointer;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background-color: rgba(255, 255, 255, 0.3);
+             transition: 0.3s;
+             border-radius: 24px;
+         }
+
+         .slider:before {
+             position: absolute;
+             content: "";
+             height: 18px;
+             width: 18px;
+             left: 3px;
+             bottom: 3px;
+             background-color: white;
+             transition: 0.3s;
+             border-radius: 50%;
+         }
+
+         input:checked + .slider {
+             background-color: #28a745;
+         }
+
+         input:checked + .slider:before {
+             transform: translateX(26px);
+         }
+
+         .end-conversation-btn {
+             background: #28a745;
+             color: white;
+             border: none;
+             padding: 8px 16px;
+             border-radius: 20px;
+             cursor: pointer;
+             font-size: 14px;
+             font-weight: 600;
+             transition: all 0.3s ease;
+         }
+
+         .end-conversation-btn:hover {
+             background: #218838;
+             transform: translateY(-1px);
+         }
+
+         /* New Word Highlighting */
+         .new-word {
+             background: #dc3545;
+             color: white;
+             padding: 2px 6px;
+             border-radius: 4px;
+             font-weight: 600;
+             cursor: help;
+             position: relative;
+             display: inline-block;
+         }
+
+         .new-word:hover::after {
+             content: attr(data-translation);
+             position: absolute;
+             bottom: 100%;
+             left: 50%;
+             transform: translateX(-50%);
+             background: #333;
+             color: white;
+             padding: 8px 12px;
+             border-radius: 6px;
+             font-size: 12px;
+             white-space: nowrap;
+             z-index: 1000;
+             margin-bottom: 5px;
+             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+         }
+
+         .new-word:hover::before {
+             content: '';
+             position: absolute;
+             bottom: 100%;
+             left: 50%;
+             transform: translateX(-50%);
+             border: 5px solid transparent;
+             border-top-color: #333;
+             margin-bottom: -5px;
+             z-index: 1000;
+         }
 
         .chat-messages {
             flex: 1;
@@ -830,9 +958,21 @@
             <!-- Chat Tab -->
             <div class="tab-content active" id="chat-tab">
                 <div class="chat-container">
-                    <div class="chat-header">
-                        <h1>AI Italian Tutor</h1>
-                    </div>
+                                         <div class="chat-header">
+                         <h1>AI Italian Tutor</h1>
+                         <div class="chat-controls">
+                             <div class="vocabulary-toggle">
+                                 <label class="toggle-switch">
+                                     <input type="checkbox" id="vocabularyToggle">
+                                     <span class="slider"></span>
+                                 </label>
+                                 <span class="toggle-label">Strict Vocabulary Mode</span>
+                             </div>
+                             <button id="endConversationBtn" class="end-conversation-btn" style="display: none;">
+                                 📚 Add New Words to Vocabulary
+                             </button>
+                         </div>
+                     </div>
                     
                     <div class="chat-messages" id="chatMessages">
                         <div class="message ai">
@@ -978,24 +1118,30 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
 
-        function addMessage(content, isUser = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-            
-            const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = isUser ? 'You' : 'AI';
-            
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = content;
-            
-            messageDiv.appendChild(avatar);
-            messageDiv.appendChild(messageContent);
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+                 function addMessage(content, isUser = false) {
+             const messageDiv = document.createElement('div');
+             messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+             
+             const avatar = document.createElement('div');
+             avatar.className = 'message-avatar';
+             avatar.textContent = isUser ? 'You' : 'AI';
+             
+             const messageContent = document.createElement('div');
+             messageContent.className = 'message-content';
+             
+             // Handle HTML content for AI responses (to show highlighted new words)
+             if (isUser) {
+                 messageContent.textContent = content;
+             } else {
+                 messageContent.innerHTML = content;
+             }
+             
+             messageDiv.appendChild(avatar);
+             messageDiv.appendChild(messageContent);
+             
+             chatMessages.appendChild(messageDiv);
+             chatMessages.scrollTop = chatMessages.scrollHeight;
+         }
 
         function showError(message) {
             const errorDiv = document.createElement('div');
@@ -1009,34 +1155,48 @@
             }, 5000);
         }
 
-        async function sendMessage(message) {
-            try {
-                sendButton.disabled = true;
-                sendButton.textContent = 'Sending...';
-                
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message: message })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    addMessage(data.response, false);
-                } else {
-                    showError(data.error || 'Failed to get response from AI');
-                }
-            } catch (error) {
-                showError('Network error. Please check your connection.');
-                console.error('Error:', error);
-            } finally {
-                sendButton.disabled = false;
-                sendButton.textContent = 'Send';
-            }
-        }
+                 async function sendMessage(message) {
+             try {
+                 sendButton.disabled = true;
+                 sendButton.textContent = 'Sending...';
+                 
+                 // Get current vocabulary state
+                 const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                 
+                 const response = await fetch('/api/chat', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({ 
+                         message: message,
+                         strict_mode: isStrictMode,
+                         current_vocabulary: currentVocabulary
+                     })
+                 });
+                 
+                 const data = await response.json();
+                 
+                 if (response.ok) {
+                     // Process AI response to highlight new words
+                     const processedResponse = processAIResponse(data.response);
+                     addMessage(processedResponse, false);
+                     
+                     // Show end conversation button if new words were introduced
+                     if (newWordsIntroduced.size > 0) {
+                         document.getElementById('endConversationBtn').style.display = 'block';
+                     }
+                 } else {
+                     showError(data.error || 'Failed to get response from AI');
+                 }
+             } catch (error) {
+                 showError('Network error. Please check your connection.');
+                 console.error('Error:', error);
+             } finally {
+                 sendButton.disabled = false;
+                 sendButton.textContent = 'Send';
+             }
+         }
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1050,8 +1210,74 @@
             await sendMessage(message);
         });
 
-        // Allow Enter key to send message
-        messageInput.addEventListener('keypress', (e) => {
+                 // Process AI response to identify and highlight new words
+         function processAIResponse(response) {
+             // Simple Italian word detection (basic regex for Italian words)
+             const italianWordRegex = /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi;
+             const words = response.match(italianWordRegex) || [];
+             
+             let processedResponse = response;
+             
+             words.forEach(word => {
+                 const lowerWord = word.toLowerCase();
+                 
+                 // Check if this word is not in current vocabulary
+                 if (!currentVocabulary.includes(lowerWord) && 
+                     !newWordsIntroduced.has(lowerWord) &&
+                     lowerWord.length > 2) { // Skip very short words
+                     
+                     newWordsIntroduced.add(lowerWord);
+                     
+                     // Get translation for this new word
+                     getTranslationForNewWord(lowerWord);
+                     
+                     // Highlight the word in the response
+                     const regex = new RegExp(`\\b${word}\\b`, 'g');
+                     processedResponse = processedResponse.replace(regex, 
+                         `<span class="new-word" data-translation="Loading translation...">${word}</span>`
+                     );
+                 }
+             });
+             
+             return processedResponse;
+         }
+
+         // Get translation for a new word using AI
+         async function getTranslationForNewWord(word) {
+             try {
+                 const response = await fetch('/api/sr/ai-translate', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json',
+                     },
+                     body: JSON.stringify({ word: word })
+                 });
+                 
+                 const data = await response.json();
+                 
+                 if (data.success) {
+                     // Store the word data
+                     newWordsData.set(word, {
+                         translation: data.translation,
+                         example: data.example,
+                         word_type: data.word_type
+                     });
+                     
+                     // Update the tooltip with the translation
+                     const wordElements = document.querySelectorAll(`.new-word[data-translation="Loading translation..."]`);
+                     wordElements.forEach(element => {
+                         if (element.textContent.toLowerCase() === word.toLowerCase()) {
+                             element.setAttribute('data-translation', data.translation);
+                         }
+                     });
+                 }
+             } catch (error) {
+                 console.error('Error getting translation for new word:', error);
+             }
+         }
+
+         // Allow Enter key to send message
+         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const message = messageInput.value.trim();
@@ -1063,8 +1289,71 @@
             }
         });
 
-        // Tab Navigation
-        const navButtons = document.querySelectorAll('.nav-button');
+                 // End conversation and add new words
+         document.getElementById('endConversationBtn').addEventListener('click', async () => {
+             if (newWordsIntroduced.size === 0) {
+                 alert('No new words to add!');
+                 return;
+             }
+             
+             const confirmed = confirm(`Add ${newWordsIntroduced.size} new words to your vocabulary?`);
+             if (!confirmed) return;
+             
+             try {
+                 let addedCount = 0;
+                 
+                 for (const word of newWordsIntroduced) {
+                     const wordData = newWordsData.get(word);
+                     if (wordData) {
+                         await addWord(word, wordData.translation, wordData.example, wordData.word_type, '');
+                         addedCount++;
+                     }
+                 }
+                 
+                 // Clear the conversation state
+                 newWordsIntroduced.clear();
+                 newWordsData.clear();
+                 document.getElementById('endConversationBtn').style.display = 'none';
+                 
+                 // Reload vocabulary for chat
+                 await loadCurrentVocabulary();
+                 
+                 alert(`Successfully added ${addedCount} new words to your vocabulary!`);
+                 
+             } catch (error) {
+                 console.error('Error adding new words:', error);
+                 alert('Error adding new words. Please try again.');
+             }
+         });
+
+         // Initialize vocabulary when page loads
+         document.addEventListener('DOMContentLoaded', () => {
+             loadCurrentVocabulary();
+         });
+
+         // Reset conversation state when starting fresh
+         function resetConversation() {
+             newWordsIntroduced.clear();
+             newWordsData.clear();
+             document.getElementById('endConversationBtn').style.display = 'none';
+             
+             // Clear chat messages except the initial greeting
+             const chatMessages = document.getElementById('chatMessages');
+             const initialMessage = chatMessages.querySelector('.message.ai');
+             chatMessages.innerHTML = '';
+             if (initialMessage) {
+                 chatMessages.appendChild(initialMessage);
+             }
+         }
+
+         // Add reset button functionality
+         document.getElementById('vocabularyToggle').addEventListener('change', () => {
+             // Reset conversation when changing modes
+             resetConversation();
+         });
+
+         // Tab Navigation
+         const navButtons = document.querySelectorAll('.nav-button');
         const tabContents = document.querySelectorAll('.tab-content');
 
         navButtons.forEach(button => {
@@ -1089,12 +1378,32 @@
             });
         });
 
-        // Spaced Repetition System
-        let currentReviewWord = null;
-        let reviewWords = [];
+                 // Spaced Repetition System
+         let currentReviewWord = null;
+         let reviewWords = [];
 
-        // Vocabulary Management
-        async function loadVocabulary() {
+         // Vocabulary-Aware Chat System
+         let currentVocabulary = [];
+         let newWordsIntroduced = new Set();
+         let newWordsData = new Map(); // word -> {translation, example, word_type}
+
+                 // Load current vocabulary for chat system
+         async function loadCurrentVocabulary() {
+             try {
+                 const response = await fetch('/api/sr/words');
+                 const data = await response.json();
+                 
+                 if (response.ok) {
+                     currentVocabulary = data.words.map(word => word.word.toLowerCase());
+                     console.log('Current vocabulary loaded for chat:', currentVocabulary.length, 'words');
+                 }
+             } catch (error) {
+                 console.error('Error loading vocabulary for chat:', error);
+             }
+         }
+
+         // Vocabulary Management
+         async function loadVocabulary() {
             try {
                 const response = await fetch('/api/sr/words');
                 const data = await response.json();
