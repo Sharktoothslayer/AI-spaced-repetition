@@ -60,21 +60,45 @@ def ai_translate():
     try:
         data = request.get_json()
         word = data.get('word', '').strip()
+        context = data.get('context', '').strip()
         
         if not word:
             return jsonify({'error': 'Word is required'}), 400
         
-        # Prepare request to Ollama for translation
+        # Prepare request to Ollama for translation with context awareness
+        if context:
+            system_content = f"""You are an Italian translation assistant. For each Italian word provided WITH CONTEXT, respond ONLY with a JSON in this exact format:
+
+{{
+  "translation": "English translation based on context",
+  "example": "Example sentence in Italian using this word",
+  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"
+}}
+
+IMPORTANT:
+- word_type must be ONLY ONE English word type
+- Do not include multiple types separated by slashes
+- Do not include any other text, only the JSON
+- Use standard English grammar terms
+- Consider the context to provide the most accurate translation
+- For words with multiple meanings, choose the meaning that fits the context best"""
+            
+            user_content = f'Translate this Italian word to English based on the context and provide exactly ONE word type:\n\nWord: {word}\nContext: {context}'
+        else:
+            system_content = 'You are an Italian translation assistant. For each Italian word provided, respond ONLY with a JSON in this exact format:\n{\n  "translation": "English translation",\n  "example": "Example sentence in Italian using this word",\n  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"\n}\n\nIMPORTANT:\n- word_type must be ONLY ONE English word type\n- Do not include multiple types separated by slashes\n- Do not include any other text, only the JSON\n- Use standard English grammar terms'
+            
+            user_content = f'Translate this Italian word to English and provide exactly ONE word type: {word}'
+        
         ollama_request = {
             'model': DEFAULT_MODEL,
             'messages': [
                 {
                     'role': 'system',
-                    'content': 'You are an Italian translation assistant. For each Italian word provided, respond ONLY with a JSON in this exact format:\n{\n  "translation": "English translation",\n  "example": "Example sentence in Italian using this word",\n  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"\n}\n\nIMPORTANT:\n- word_type must be ONLY ONE English word type\n- Do not include multiple types separated by slashes\n- Do not include any other text, only the JSON\n- Use standard English grammar terms'
+                    'content': system_content
                 },
                 {
                     'role': 'user',
-                    'content': f'Translate this Italian word to English and provide exactly ONE word type: {word}'
+                    'content': user_content
                 }
             ],
             'stream': False
@@ -295,27 +319,33 @@ def chat():
         
         # Prepare the system prompt based on mode
         if strict_mode:
-            # Strict mode: only use vocabulary words
-            system_content = f"""Sei un tutor di italiano in modalità VOCABOLARIO STRETTO. Il tuo ruolo è:
-            1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
-            2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
-            3. Usa SOLO parole che sono nel vocabolario dello studente
-            4. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
-            
-            VOCABOLARIO DISPONIBILE: {', '.join(current_vocabulary)}
-            
-            IMPORTANTE: Puoi usare SOLO queste parole. Se devi esprimere qualcosa ma non hai le parole giuste, riformula usando solo il vocabolario fornito."""
+            # Strict mode: ONLY use vocabulary words - NO EXCEPTIONS
+            system_content = f"""Sei un tutor di italiano in modalità VOCABOLARIO STRETTO. 
+
+REGOLE ASSOLUTE:
+1. Rispondi SEMPRE in italiano, usando un linguaggio naturale ma corretto
+2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
+3. Puoi usare SOLO e ESCLUSIVAMENTE queste parole: {', '.join(current_vocabulary)}
+4. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+
+VOCABOLARIO DISPONIBILE: {', '.join(current_vocabulary)}
+
+IMPORTANTE: 
+- NON puoi usare NESSUNA parola che non sia in questa lista
+- Se devi esprimere qualcosa ma non hai le parole giuste, riformula usando SOLO il vocabolario fornito
+- Se non riesci a esprimere un concetto con le parole disponibili, usa sinonimi o riformula completamente
+- NON introdurre mai nuove parole in modalità stretta"""
         else:
             # Learning mode: mostly vocabulary words with some new words
             system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
-            1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
-            2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
-            3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
-            4. Introduci 1-2 NUOVE parole italiane per risposta che NON sono nel vocabolario
-            5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
-            
-            Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
-            Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto."""
+1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
+2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
+3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
+4. Introduci 1-2 NUOVE parole italiane per risposta che NON sono nel vocabolario
+5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+
+Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
+Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto."""
         
         # Prepare request to Ollama with vocabulary-aware system prompt
         ollama_request = {

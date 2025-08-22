@@ -219,6 +219,17 @@
              cursor: help;
              position: relative;
              display: inline-block;
+             animation: pulse 2s infinite;
+         }
+
+         .new-word.loaded {
+             animation: none;
+         }
+
+         @keyframes pulse {
+             0% { opacity: 1; }
+             50% { opacity: 0.7; }
+             100% { opacity: 1; }
          }
 
          .new-word:hover::after {
@@ -1212,67 +1223,110 @@
 
                  // Process AI response to identify and highlight new words
          function processAIResponse(response) {
-             // Simple Italian word detection (basic regex for Italian words)
-             const italianWordRegex = /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi;
-             const words = response.match(italianWordRegex) || [];
+             console.log('Processing AI response for new words...');
+             console.log('Current vocabulary size:', currentVocabulary.length);
+             console.log('Response:', response);
+             
+             // Enhanced Italian word detection with multiple regex patterns
+             const patterns = [
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]?\b/gi,  // Standard Italian words
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,  // Fallback pattern
+             ];
+             
+             let allWords = [];
+             patterns.forEach(pattern => {
+                 const matches = response.match(pattern) || [];
+                 allWords = allWords.concat(matches);
+             });
+             
+             // Remove duplicates and filter
+             const uniqueWords = [...new Set(allWords)];
+             console.log('Detected words:', uniqueWords);
              
              let processedResponse = response;
              
-             words.forEach(word => {
+             // Create a map to track which words we've already processed to avoid duplicates
+             const processedWords = new Set();
+             
+             uniqueWords.forEach(word => {
                  const lowerWord = word.toLowerCase();
+                 
+                 // Skip if we've already processed this word or if it's too short
+                 if (processedWords.has(lowerWord) || lowerWord.length < 3) {
+                     return;
+                 }
                  
                  // Check if this word is not in current vocabulary
                  if (!currentVocabulary.includes(lowerWord) && 
-                     !newWordsIntroduced.has(lowerWord) &&
-                     lowerWord.length > 2) { // Skip very short words
+                     !newWordsIntroduced.has(lowerWord)) {
                      
+                     console.log('New word detected:', word, '->', lowerWord);
                      newWordsIntroduced.add(lowerWord);
+                     processedWords.add(lowerWord);
                      
-                     // Get translation for this new word
-                     getTranslationForNewWord(lowerWord);
+                     // Get context-aware translation for this new word
+                     getContextAwareTranslation(word, response);
                      
-                     // Highlight the word in the response
-                     const regex = new RegExp(`\\b${word}\\b`, 'g');
+                     // Highlight the word in the response with better regex handling
+                     const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                     const regex = new RegExp(`\\b${escapedWord}\\b`, 'g');
                      processedResponse = processedResponse.replace(regex, 
-                         `<span class="new-word" data-translation="Loading translation...">${word}</span>`
+                         `<span class="new-word" data-translation="Loading translation..." data-word="${lowerWord}">${word}</span>`
                      );
                  }
              });
              
+             console.log('New words introduced:', Array.from(newWordsIntroduced));
              return processedResponse;
          }
 
-         // Get translation for a new word using AI
-         async function getTranslationForNewWord(word) {
+         // Get context-aware translation for a new word using AI
+         async function getContextAwareTranslation(word, fullResponse) {
              try {
+                 // Find the sentence containing this word for context
+                 const sentences = fullResponse.split(/[.!?]+/);
+                 let contextSentence = '';
+                 
+                 for (const sentence of sentences) {
+                     if (sentence.toLowerCase().includes(word.toLowerCase())) {
+                         contextSentence = sentence.trim();
+                         break;
+                     }
+                 }
+                 
+                 // Use the existing AI translation endpoint but with context
                  const response = await fetch('/api/sr/ai-translate', {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json',
                      },
-                     body: JSON.stringify({ word: word })
+                     body: JSON.stringify({ 
+                         word: word,
+                         context: contextSentence || fullResponse
+                     })
                  });
                  
                  const data = await response.json();
                  
                  if (data.success) {
                      // Store the word data
-                     newWordsData.set(word, {
+                     newWordsData.set(word.toLowerCase(), {
                          translation: data.translation,
                          example: data.example,
                          word_type: data.word_type
                      });
                      
                      // Update the tooltip with the translation
-                     const wordElements = document.querySelectorAll(`.new-word[data-translation="Loading translation..."]`);
+                     const wordElements = document.querySelectorAll(`.new-word[data-word="${word.toLowerCase()}"]`);
                      wordElements.forEach(element => {
-                         if (element.textContent.toLowerCase() === word.toLowerCase()) {
+                         if (element.getAttribute('data-translation') === 'Loading translation...') {
                              element.setAttribute('data-translation', data.translation);
+                             element.classList.add('loaded');
                          }
                      });
                  }
              } catch (error) {
-                 console.error('Error getting translation for new word:', error);
+                 console.error('Error getting context-aware translation for new word:', error);
              }
          }
 
@@ -1329,6 +1383,11 @@
          // Initialize vocabulary when page loads
          document.addEventListener('DOMContentLoaded', () => {
              loadCurrentVocabulary();
+             
+             // Set initial toggle label
+             const toggleLabel = document.querySelector('.toggle-label');
+             toggleLabel.textContent = 'Learning Mode: ON';
+             toggleLabel.style.color = '#ffc107';
          });
 
          // Reset conversation state when starting fresh
@@ -1350,6 +1409,16 @@
          document.getElementById('vocabularyToggle').addEventListener('change', () => {
              // Reset conversation when changing modes
              resetConversation();
+             
+             // Update toggle label to show current mode
+             const toggleLabel = document.querySelector('.toggle-label');
+             if (document.getElementById('vocabularyToggle').checked) {
+                 toggleLabel.textContent = 'Strict Mode: ON';
+                 toggleLabel.style.color = '#28a745';
+             } else {
+                 toggleLabel.textContent = 'Learning Mode: ON';
+                 toggleLabel.style.color = '#ffc107';
+             }
          });
 
          // Tab Navigation
