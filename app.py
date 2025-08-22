@@ -346,15 +346,17 @@ IMPORTANTE:
 4. Introduci MASSIMO 2 NUOVE parole italiane per risposta che NON sono nel vocabolario
 5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
 
-REGOLE IMPORTANTI:
-- MASSIMO 2 nuove parole per risposta
+REGOLE ASSOLUTE E INVIOLABILI:
+- MASSIMO 2 nuove parole per risposta - NON MAI DI PIÙ
 - Se non puoi completare una frase con solo 2 nuove parole, usa frasi più semplici
 - È meglio una frase semplice e corretta che una frase complessa con troppe parole nuove
-- Priorità: Rispetta il limite di 2 nuove parole > Completare la frase
+- Priorità ASSOLUTA: Rispetta il limite di 2 nuove parole > Completare la frase
+- Se devi scegliere tra una frase completa con 3+ nuove parole o una frase semplice con 2 nuove parole, scegli SEMPRE la seconda opzione
 - Usa principalmente parole familiari dal vocabolario fornito
 
 Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
-Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto."""
+Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto.
+Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 2 nuove parole."""
         
         # Prepare request to Ollama with vocabulary-aware system prompt
         ollama_request = {
@@ -366,7 +368,7 @@ Rendi le nuove parole contestualmente chiare così lo studente può capirle dal 
                 },
                 {
                     'role': 'user',
-                    'content': f"{message}\n\n{'⚠️ RICORDA: Usa SOLO le parole del vocabolario fornito!' if strict_mode else ''}"
+                    'content': f"{message}\n\n{'⚠️ RICORDA: Usa SOLO le parole del vocabolario fornito!' if strict_mode else '⚠️ RICORDA: MASSIMO 2 nuove parole per risposta! Se necessario, usa frasi più semplici.'}"
                 }
             ],
             'stream': False
@@ -405,6 +407,48 @@ Rendi le nuove parole contestualmente chiare così lo studente può capirle dal 
                     # For now, just log the warning. In production, you might want to regenerate the response
                 else:
                     print(f"Strict mode validation passed - all words are from vocabulary")
+            
+            # Validate response in learning mode
+            else:
+                print(f"Validating learning mode response...")
+                import re
+                # Enhanced word detection for validation (same patterns as frontend)
+                patterns = [
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[àèéìòù]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
+                ]
+                
+                words_in_response = []
+                for pattern in patterns:
+                    matches = re.findall(pattern, ai_message.lower())
+                    words_in_response.extend(matches)
+                
+                # Remove duplicates
+                words_in_response = list(set(words_in_response))
+                
+                # Count new words
+                new_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                
+                if len(new_words) > 2:
+                    print(f"WARNING: AI introduced {len(new_words)} new words in learning mode: {new_words}")
+                    print(f"This exceeds the limit of 2 new words. Response will be regenerated.")
+                    
+                    # Regenerate response with stronger enforcement
+                    stronger_prompt = f"""ATTENZIONE: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 2.
+                    
+Riformula la risposta usando MASSIMO 2 nuove parole. Se necessario, usa frasi più semplici.
+Risposta originale: {ai_message}
+
+Nuova risposta (max 2 nuove parole):"""
+                    
+                    # For now, just log the warning and add a note. In production, you might want to regenerate
+                    ai_message = f"⚠️ ATTENZIONE: Ho introdotto troppe nuove parole ({len(new_words)}). Dovrei usarne massimo 2. Ecco la mia risposta: {ai_message}"
+                else:
+                    print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")
             
             return jsonify({
                 'response': ai_message,

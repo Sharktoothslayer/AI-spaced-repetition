@@ -1239,12 +1239,16 @@
              const patterns = [
                  // Pattern 1: Standard Italian words (including short ones like "di", "a", "o", "il")
                  /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
-                 // Pattern 2: Catch very short words that might be missed
+                 // Pattern 2: Catch very short words that might be missed (including single characters like "ò")
                  /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi,
                  // Pattern 3: Catch words with apostrophes (like "dell'", "nell'")
                  /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
                  // Pattern 4: Catch contractions (like "del", "nel", "al")
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi,
+                 // Pattern 5: Catch single accented characters and very short words that might be missed
+                 /\b[àèéìòù]\b/gi,
+                 // Pattern 6: Catch any remaining Italian characters that might be standalone
+                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b/gi
              ];
              
              let allWords = [];
@@ -1275,6 +1279,10 @@
                      !newWordsIntroduced.has(lowerWord)) {
                      
                      console.log('New word detected:', word, '->', lowerWord);
+                     console.log('  - Word length:', word.length);
+                     console.log('  - Is in vocabulary:', currentVocabulary.includes(lowerWord));
+                     console.log('  - Already introduced:', newWordsIntroduced.has(lowerWord));
+                     
                      newWordsIntroduced.add(lowerWord);
                      processedWords.add(lowerWord);
                      
@@ -1287,6 +1295,10 @@
                      processedResponse = processedResponse.replace(regex, 
                          `<span class="new-word" data-translation="Loading translation..." data-word="${lowerWord}">${word}</span>`
                      );
+                 } else {
+                     console.log('Word already known or processed:', word, '->', lowerWord);
+                     console.log('  - In vocabulary:', currentVocabulary.includes(lowerWord));
+                     console.log('  - Already introduced:', newWordsIntroduced.has(lowerWord));
                  }
              });
              
