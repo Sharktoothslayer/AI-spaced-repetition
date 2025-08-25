@@ -416,7 +416,7 @@ Se non hai abbastanza parole familiari per creare una frase completa, crea una f
                 patterns = [
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
                     r'\b[àèéìòù]\b',
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
@@ -465,4 +465,4 @@ Nuova risposta (max 2 nuove parole):"""
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5000)
