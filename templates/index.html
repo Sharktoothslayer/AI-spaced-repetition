@@ -211,15 +211,11 @@
 
          /* New Word Highlighting */
          .new-word {
-             background: #dc3545;
-             color: white;
-             padding: 2px 6px;
-             border-radius: 4px;
+             color: #dc3545;
              font-weight: 600;
              cursor: help;
              position: relative;
              display: inline-block;
-             animation: pulse 2s infinite;
          }
 
          .new-word.loaded {
@@ -1264,32 +1260,43 @@
 
         // Function to get context-aware translation for a word
          async function getContextAwareTranslation(word, context = '') {
+             console.log('🔍 Starting translation for word:', word);
              try {
+                 const requestBody = {
+                     word: word,
+                     context: context
+                 };
+                 console.log('📤 Sending translation request:', requestBody);
+                 
                  const response = await fetch('/api/sr/ai-translate', {
                      method: 'POST',
                      headers: {
                          'Content-Type': 'application/json'
                      },
-                     body: JSON.stringify({
-                         word: word,
-                         context: context
-                     })
+                     body: JSON.stringify(requestBody)
                  });
+                 
+                 console.log('📥 Translation response status:', response.status);
                  
                  if (response.ok) {
                      const data = await response.json();
+                     console.log('📥 Translation response data:', data);
+                     
                      if (data.success) {
+                         console.log('✅ Translation successful:', word, '->', data.translation);
                          return data.translation;
                      } else {
-                         console.warn('Translation failed:', data.error);
+                         console.warn('⚠️ Translation failed:', data.error);
                          return `[${word}]`;
                      }
                  } else {
-                     console.error('Translation request failed');
+                     console.error('❌ Translation request failed with status:', response.status);
+                     const errorText = await response.text();
+                     console.error('❌ Error response body:', errorText);
                      return `[${word}]`;
                  }
              } catch (error) {
-                 console.error('Translation error:', error);
+                 console.error('💥 Translation error:', error);
                  return `[${word}]`;
              }
          }

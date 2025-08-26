@@ -59,11 +59,16 @@ def add_word():
 def ai_translate():
     """Use free translation API to translate and provide context for a word"""
     try:
+        print(f"🔍 AI translate request received")
         data = request.get_json()
         word = data.get('word', '').strip()
         context = data.get('context', '').strip()
         
+        print(f"📥 Word to translate: '{word}'")
+        print(f"📥 Context: '{context}'")
+        
         if not word:
+            print(f"❌ Error: No word provided")
             return jsonify({'error': 'Word is required'}), 400
         
         # Use free Google Translate (no API key required)
@@ -77,14 +82,23 @@ def ai_translate():
                 'q': word
             }
             
+            print(f"🌐 Making Google Translate request to: {google_url}")
+            print(f"🌐 Parameters: {params}")
+            
             response = requests.get(google_url, params=params, timeout=15)
+            print(f"🌐 Google Translate response status: {response.status_code}")
+            
             if response.status_code == 200:
                 # Parse Google Translate response
                 data = response.json()
+                print(f"🌐 Google Translate raw response: {data}")
+                
                 if data and len(data) > 0 and len(data[0]) > 0:
                     english_translation = data[0][0][0]
+                    print(f"🌐 Extracted translation: '{english_translation}'")
+                    
                     if english_translation and english_translation != word:
-                        print(f"  🌐 Google Translate: {word} -> {english_translation}")
+                        print(f"✅ Google Translate successful: {word} -> {english_translation}")
                         
                         # Simple word type detection based on common patterns
                         word_type = 'noun'  # default
@@ -108,6 +122,8 @@ def ai_translate():
                         elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
                             word_type = 'interjection'
                         
+                        print(f"🔤 Detected word type: {word_type}")
+                        
                         # Generate a simple example sentence
                         if word_type == 'verb':
                             example = f"Voglio {word}." if word.endswith('are') else f"Devo {word}."
@@ -118,33 +134,48 @@ def ai_translate():
                         else:
                             example = f"Uso {word} spesso."
                         
-                        return jsonify({
+                        print(f"📝 Generated example: {example}")
+                        
+                        result = {
                             'translation': english_translation,
                             'example': example,
                             'word_type': word_type,
                             'success': True
-                        })
+                        }
+                        print(f"✅ Returning successful result: {result}")
+                        return jsonify(result)
+                    else:
+                        print(f"⚠️ Translation same as original word or empty")
+                else:
+                    print(f"⚠️ Unexpected Google Translate response format")
             
             # If Google Translate fails, fall back to basic translation
-            return jsonify({
+            print(f"❌ Google Translate failed, using fallback")
+            fallback_result = {
                 'translation': f'[Italian: {word}]',
                 'example': f'Esempio con {word}.',
                 'word_type': 'noun',
                 'success': False,
                 'error': 'Translation failed'
-            })
+            }
+            print(f"🔄 Returning fallback result: {fallback_result}")
+            return jsonify(fallback_result)
                 
         except Exception as e:
+            print(f"💥 Google Translate exception: {str(e)}")
             # Fallback to basic translation
-            return jsonify({
+            fallback_result = {
                 'translation': f'[Italian: {word}]',
                 'example': f'Esempio con {word}.',
                 'word_type': 'noun',
                 'success': False,
                 'error': f'Translation service unavailable: {str(e)}'
-            })
+            }
+            print(f"🔄 Returning fallback result: {fallback_result}")
+            return jsonify(fallback_result)
             
     except Exception as e:
+        print(f"💥 Server error in ai_translate: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/sr/words/<word_id>', methods=['DELETE'])
