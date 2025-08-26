@@ -148,20 +148,20 @@
          }
 
          /* Toggle Switch Styles */
-         .toggle-switch {
+         .vocabulary-toggle {
              position: relative;
              display: inline-block;
              width: 50px;
              height: 24px;
          }
 
-         .toggle-switch input {
+         .vocabulary-toggle input {
              opacity: 0;
              width: 0;
              height: 0;
          }
 
-         .slider {
+         .toggle-slider {
              position: absolute;
              cursor: pointer;
              top: 0;
@@ -173,7 +173,7 @@
              border-radius: 24px;
          }
 
-         .slider:before {
+         .toggle-slider:before {
              position: absolute;
              content: "";
              height: 18px;
@@ -185,11 +185,11 @@
              border-radius: 50%;
          }
 
-         input:checked + .slider {
+         .vocabulary-toggle input:checked + .toggle-slider {
              background-color: #28a745;
          }
 
-         input:checked + .slider:before {
+         .vocabulary-toggle input:checked + .toggle-slider:before {
              transform: translateX(26px);
          }
 
@@ -1063,12 +1063,9 @@
                                  <label class="toggle-label">
                                      <input type="checkbox" id="vocabularyToggle">
                                      <span class="toggle-slider"></span>
+                                     <span class="toggle-text">Learning Mode: ON (1-5 new words)</span>
                                  </label>
-                                 <span class="toggle-text">Learning Mode: ON (1-5 new words)</span>
                              </div>
-                             <button id="endConversationBtn" class="end-conversation-btn" style="display: none;">
-                                 📚 Add New Words to Vocabulary
-                             </button>
                          </div>
                      </div>
                     
@@ -1320,8 +1317,14 @@
                 const aiThinking = document.getElementById('aiThinking');
                 aiThinking.style.display = 'flex';
                 
-                // Get current vocabulary state
-                const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                                 // Get current vocabulary state
+                 const toggleElement = document.getElementById('vocabularyToggle');
+                 if (!toggleElement) {
+                     console.error('❌ Vocabulary toggle not found in DOM');
+                     showError('Vocabulary toggle not found. Please refresh the page.');
+                     return;
+                 }
+                 const isStrictMode = toggleElement.checked;
                 
                 console.log('📤 Sending message with settings:');
                 console.log('  - Strict Mode:', isStrictMode);
@@ -1576,9 +1579,42 @@
              loadCurrentVocabulary();
              
              // Set initial toggle label
-             const toggleLabel = document.querySelector('.toggle-label');
-             toggleLabel.textContent = 'Learning Mode: ON (1-5 new words)';
-             toggleLabel.style.color = '#ffc107';
+             const toggleLabel = document.querySelector('.toggle-text');
+             if (toggleLabel) {
+                 toggleLabel.textContent = 'Learning Mode: ON (1-5 new words)';
+                 toggleLabel.style.color = '#ffc107';
+             } else {
+                 console.warn('⚠️ Toggle label not found during initialization');
+             }
+             
+             // Set up toggle event listener
+             const toggleElement = document.getElementById('vocabularyToggle');
+             if (toggleElement) {
+                 toggleElement.addEventListener('change', () => {
+                     // Reset conversation when changing modes
+                     resetConversation();
+                     
+                     // Update toggle label to show current mode
+                     const toggleLabel = document.querySelector('.toggle-text');
+                     if (toggleLabel) {
+                         const isStrictMode = toggleElement.checked;
+                         if (isStrictMode) {
+                             toggleLabel.textContent = 'Strict Mode: ON';
+                             toggleLabel.style.color = '#28a745';
+                             console.log('🟢 STRICT MODE ENABLED - AI should use ONLY vocabulary words');
+                         } else {
+                             toggleLabel.textContent = 'Learning Mode: ON';
+                             toggleLabel.style.color = '#ffc107';
+                             console.log('🟡 LEARNING MODE ENABLED - AI can introduce 1-5 new words');
+                         }
+                     }
+                     
+                     // Log current vocabulary for debugging
+                     console.log('Current vocabulary for AI:', currentVocabulary);
+                 });
+             } else {
+                 console.warn('⚠️ Vocabulary toggle not found during initialization');
+             }
          });
 
          // Reset conversation state when starting fresh
@@ -1600,28 +1636,7 @@
              }
          }
 
-         // Add reset button functionality
-         document.getElementById('vocabularyToggle').addEventListener('change', () => {
-             // Reset conversation when changing modes
-             resetConversation();
-             
-             // Update toggle label to show current mode
-             const toggleLabel = document.querySelector('.toggle-label');
-             const isStrictMode = document.getElementById('vocabularyToggle').checked;
-             
-             if (isStrictMode) {
-                 toggleLabel.textContent = 'Strict Mode: ON';
-                 toggleLabel.style.color = '#28a745';
-                 console.log('🟢 STRICT MODE ENABLED - AI should use ONLY vocabulary words');
-             } else {
-                 toggleLabel.textContent = 'Learning Mode: ON';
-                 toggleLabel.style.color = '#ffc107';
-                 console.log('🟡 LEARNING MODE ENABLED - AI can introduce 1-5 new words');
-             }
-             
-             // Log current vocabulary for debugging
-             console.log('Current vocabulary for AI:', currentVocabulary);
-         });
+         // Add reset button functionality (will be set up in DOMContentLoaded)
 
          // Tab Navigation
          const navButtons = document.querySelectorAll('.nav-button');
@@ -1673,9 +1688,10 @@
                      console.log('  - Words:', currentVocabulary);
                      
                      // Update toggle label if page is already loaded
-                     const toggleLabel = document.querySelector('.toggle-label');
-                     if (toggleLabel) {
-                         const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                     const toggleLabel = document.querySelector('.toggle-text');
+                     const toggleElement = document.getElementById('vocabularyToggle');
+                     if (toggleLabel && toggleElement) {
+                         const isStrictMode = toggleElement.checked;
                          if (isStrictMode) {
                              toggleLabel.textContent = 'Strict Mode: ON';
                              toggleLabel.style.color = '#28a745';
