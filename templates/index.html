@@ -1002,6 +1002,9 @@
                         <button id="addNewWordsBtn" class="add-word-btn" onclick="addNewWords()" style="display: none;">
                             ➕ Add New Words to Vocabulary
                         </button>
+                        <button id="endConversationBtn" class="add-word-btn" style="display: none; margin-left: 10px;">
+                            🔚 End Conversation
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1119,10 +1122,46 @@
     </div>
 
     <script>
+        // Get DOM elements
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
         const chatMessages = document.getElementById('chatMessages');
-        const chatForm = document.getElementById('chatForm');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
+        const vocabularyToggle = document.getElementById('vocabularyToggle');
+        const addNewWordsBtn = document.getElementById('addNewWordsBtn');
+        const endConversationBtn = document.getElementById('endConversationBtn');
+        
+        // Check if elements exist
+        if (!chatInput || !sendBtn || !chatMessages) {
+            console.error('❌ Required chat elements not found:', {
+                chatInput: !!chatInput,
+                sendBtn: !!sendBtn,
+                chatMessages: !!chatMessages
+            });
+            return;
+        }
+        
+        // Add event listeners
+        sendBtn.addEventListener('click', () => {
+            const message = chatInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                chatInput.value = '';
+                sendMessage(message);
+            }
+        });
+        
+        // Allow Enter key to send message
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                if (message) {
+                    addMessage(message, true);
+                    chatInput.value = '';
+                    sendMessage(message);
+                }
+            }
+        });
 
                  function addMessage(content, isUser = false) {
              const messageDiv = document.createElement('div');
@@ -1162,99 +1201,87 @@
         }
 
                  async function sendMessage(message) {
-             try {
-                 sendButton.disabled = true;
-                 sendButton.textContent = 'Sending...';
-                 
-                 // Get current vocabulary state
-                 const isStrictMode = document.getElementById('vocabularyToggle').checked;
-                 
-                 console.log('📤 Sending message with settings:');
-                 console.log('  - Strict Mode:', isStrictMode);
-                 console.log('  - Vocabulary Size:', currentVocabulary.length);
-                 console.log('  - Available Words:', currentVocabulary);
-                 console.log('  - Message:', message);
-                 
-                 const response = await fetch('/api/chat', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json',
-                     },
-                     body: JSON.stringify({ 
-                         message: message,
-                         strict_mode: isStrictMode,
-                         current_vocabulary: currentVocabulary
-                     })
-                 });
-                 
-                 const data = await response.json();
-                 
-                 if (response.ok) {
-                     console.log('📥 AI Response received:', data.response);
-                     
-                     // Process AI response to highlight new words
-                     const processedResponse = processAIResponse(data.response);
-                     addMessage(processedResponse, false);
-                     
-                     // Show end conversation button if new words were introduced
-                     if (newWordsIntroduced.size > 0) {
-                         document.getElementById('endConversationBtn').style.display = 'block';
-                     }
-                 } else {
-                     showError(data.error || 'Failed to get response from AI');
-                 }
-             } catch (error) {
-                 showError('Network error. Please check your connection.');
-                 console.error('Error:', error);
-             } finally {
-                 sendButton.disabled = false;
-                 sendButton.textContent = 'Send';
-             }
-         }
-
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const message = messageInput.value.trim();
-            if (!message) return;
-            
-            addMessage(message, true);
-            messageInput.value = '';
-            
-            await sendMessage(message);
-        });
-
-                 // Function to get context-aware translation for a word
-         async function getContextAwareTranslation(word, context = '') {
-             try {
-                 const response = await fetch('/api/sr/ai-translate', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json'
-                     },
-                     body: JSON.stringify({
-                         word: word,
-                         context: context
-                     })
-                 });
-                 
-                 if (response.ok) {
-                     const data = await response.json();
-                     if (data.success) {
-                         return data.translation;
-                     } else {
-                         console.warn('Translation failed:', data.error);
-                         return `[${word}]`;
-                     }
-                 } else {
-                     console.error('Translation request failed');
-                     return `[${word}]`;
-                 }
-             } catch (error) {
-                 console.error('Translation error:', error);
-                 return `[${word}]`;
-             }
-         }
+            try {
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending...';
+                
+                // Get current vocabulary state
+                const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                
+                console.log('📤 Sending message with settings:');
+                console.log('  - Strict Mode:', isStrictMode);
+                console.log('  - Vocabulary Size:', currentVocabulary.length);
+                console.log('  - Available Words:', currentVocabulary);
+                console.log('  - Message:', message);
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        strict_mode: isStrictMode,
+                        current_vocabulary: currentVocabulary
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('📥 AI Response received:', data.response);
+                    
+                    // Process AI response to highlight new words
+                    const processedResponse = processAIResponse(data.response);
+                    addMessage(processedResponse, false);
+                    
+                    // Show end conversation button if new words were introduced
+                    if (newWordsIntroduced.size > 0) {
+                        document.getElementById('endConversationBtn').style.display = 'block';
+                    }
+                } else {
+                    showError(data.error || 'Failed to get response from AI');
+                }
+            } catch (error) {
+                console.error('❌ Error sending message:', error);
+                showError('Failed to send message. Please try again.');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+        
+        // Function to get context-aware translation for a word
+        async function getContextAwareTranslation(word, context = '') {
+            try {
+                const response = await fetch('/api/sr/ai-translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        word: word,
+                        context: context
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.translation;
+                    } else {
+                        console.warn('Translation failed:', data.error);
+                        return `[${word}]`;
+                    }
+                } else {
+                    console.error('Translation request failed');
+                    return `[${word}]`;
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                return `[${word}]`;
+            }
+        }
 
         // Function to process AI response and highlight new words
         function processAIResponse(response) {
@@ -1360,21 +1387,8 @@
             
             return processedResponse;
         }
-
-         // Allow Enter key to send message
-         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const message = messageInput.value.trim();
-                if (message) {
-                    addMessage(message, true);
-                    messageInput.value = '';
-                    sendMessage(message);
-                }
-            }
-        });
-
-                 // End conversation and add new words
+        
+        // End conversation and add new words
          document.getElementById('endConversationBtn').addEventListener('click', async () => {
              if (newWordsIntroduced.size === 0) {
                  alert('No new words to add!');
