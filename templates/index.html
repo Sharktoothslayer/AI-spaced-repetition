@@ -1344,10 +1344,18 @@
                         existingWord.translation = translation;
                     }
                     
-                    // Update tooltip
+                    // Update tooltip - show multiple translations if available
                     const spans = document.querySelectorAll(`[data-word="${wordObj.word}"]`);
                     spans.forEach(span => {
-                        span.title = translation;
+                        // Check if we have multiple translations (comma-separated)
+                        if (translation && translation.includes(',')) {
+                            // Show up to 3 translations in tooltip
+                            const translations = translation.split(',').map(t => t.trim()).slice(0, 3);
+                            const tooltipText = translations.join('\n');
+                            span.title = tooltipText;
+                        } else {
+                            span.title = translation;
+                        }
                         span.style.animation = 'none'; // Stop pulsing
                     });
                 } catch (error) {

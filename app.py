@@ -94,58 +94,81 @@ def ai_translate():
                 print(f"🌐 Google Translate raw response: {data}")
                 
                 if data and len(data) > 0 and len(data[0]) > 0:
-                    english_translation = data[0][0][0]
-                    print(f"🌐 Extracted translation: '{english_translation}'")
+                    # Extract all possible translations
+                    all_translations = []
+                    for translation_block in data[0]:
+                        if translation_block and len(translation_block) > 0:
+                            english_word = translation_block[0]
+                            if english_word and english_word != word and english_word not in all_translations:
+                                all_translations.append(english_word)
                     
-                    if english_translation and english_translation != word:
-                        print(f"✅ Google Translate successful: {word} -> {english_translation}")
+                    if all_translations:
+                        # Combine translations (up to 3, separated by commas)
+                        english_translation = ", ".join(all_translations[:3])
+                        print(f"🌐 Extracted translations: {all_translations}")
+                        print(f"🌐 Combined translation: '{english_translation}'")
                         
-                        # Simple word type detection based on common patterns
-                        word_type = 'noun'  # default
-                        
-                        # Common Italian word endings and patterns
-                        if word.endswith(('are', 'ere', 'ire')):
-                            word_type = 'verb'
-                        elif word.endswith(('o', 'a', 'e', 'i')):
-                            if word.endswith(('o', 'a')):
+                        if english_translation and english_translation != word:
+                            print(f"✅ Google Translate successful: {word} -> {english_translation}")
+                            
+                            # Simple word type detection based on common patterns
+                            word_type = 'noun'  # default
+                            
+                            # Common Italian word endings and patterns
+                            if word.endswith(('are', 'ere', 'ire')):
+                                word_type = 'verb'
+                            elif word.endswith(('ato', 'uto', 'ito')):  # Past participles
+                                word_type = 'verb'
+                            elif word.endswith(('ante', 'ente')):  # Present participles
                                 word_type = 'adjective'
+                            elif word.endswith(('o', 'a', 'e', 'i')):
+                                if word.endswith(('o', 'a')):
+                                    word_type = 'adjective'
+                                else:
+                                    word_type = 'noun'
+                            elif word in ['di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra']:
+                                word_type = 'preposition'
+                            elif word in ['e', 'o', 'ma', 'se', 'che', 'perché']:
+                                word_type = 'conjunction'
+                            elif word in ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro', 'mi', 'ti', 'ci', 'vi']:
+                                word_type = 'pronoun'
+                            elif word in ['molto', 'poco', 'bene', 'male', 'qui', 'là', 'oggi', 'ieri']:
+                                word_type = 'adverb'
+                            elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
+                                word_type = 'interjection'
+                            
+                            print(f"🔤 Detected word type: {word_type}")
+                            
+                            # Generate a simple example sentence
+                            if word_type == 'verb':
+                                if word.endswith(('ato', 'uto', 'ito')):
+                                    example = f"Ho {word} ieri."
+                                elif word.endswith('are'):
+                                    example = f"Voglio {word}."
+                                else:
+                                    example = f"Devo {word}."
+                            elif word_type == 'noun':
+                                example = f"Questo è un {word}."
+                            elif word_type == 'adjective':
+                                example = f"È molto {word}."
                             else:
-                                word_type = 'noun'
-                        elif word in ['di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra']:
-                            word_type = 'preposition'
-                        elif word in ['e', 'o', 'ma', 'se', 'che', 'perché']:
-                            word_type = 'conjunction'
-                        elif word in ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro', 'mi', 'ti', 'ci', 'vi']:
-                            word_type = 'pronoun'
-                        elif word in ['molto', 'poco', 'bene', 'male', 'qui', 'là', 'oggi', 'ieri']:
-                            word_type = 'adverb'
-                        elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
-                            word_type = 'interjection'
-                        
-                        print(f"🔤 Detected word type: {word_type}")
-                        
-                        # Generate a simple example sentence
-                        if word_type == 'verb':
-                            example = f"Voglio {word}." if word.endswith('are') else f"Devo {word}."
-                        elif word_type == 'noun':
-                            example = f"Questo è un {word}."
-                        elif word_type == 'adjective':
-                            example = f"È molto {word}."
+                                example = f"Uso {word} spesso."
+                            
+                            print(f"📝 Generated example: {example}")
+                            
+                            result = {
+                                'translation': english_translation,
+                                'example': example,
+                                'word_type': word_type,
+                                'success': True,
+                                'all_translations': all_translations  # Include all translations for tooltip
+                            }
+                            print(f"✅ Returning successful result: {result}")
+                            return jsonify(result)
                         else:
-                            example = f"Uso {word} spesso."
-                        
-                        print(f"📝 Generated example: {example}")
-                        
-                        result = {
-                            'translation': english_translation,
-                            'example': example,
-                            'word_type': word_type,
-                            'success': True
-                        }
-                        print(f"✅ Returning successful result: {result}")
-                        return jsonify(result)
+                            print(f"⚠️ Translation same as original word or empty")
                     else:
-                        print(f"⚠️ Translation same as original word or empty")
+                        print(f"⚠️ No valid translations found")
                 else:
                     print(f"⚠️ Unexpected Google Translate response format")
             
