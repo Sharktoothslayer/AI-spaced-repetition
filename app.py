@@ -121,6 +121,16 @@ def ai_translate():
                                 word_type = 'verb'
                             elif word.endswith(('ante', 'ente')):  # Present participles
                                 word_type = 'adjective'
+                            # Check for verb + pronoun combinations (like "aiutarti", "vedermi", "mangiarlo")
+                            elif any(word.endswith(pronoun) for pronoun in ['ti', 'mi', 'lo', 'la', 'li', 'le', 'ci', 'vi', 'si', 'ne']):
+                                # Check if the word before the pronoun is a verb stem
+                                for pronoun in ['ti', 'mi', 'lo', 'la', 'li', 'le', 'ci', 'vi', 'si', 'ne']:
+                                    if word.endswith(pronoun):
+                                        verb_stem = word[:-len(pronoun)]
+                                        if verb_stem.endswith(('a', 'e', 'i')):  # Common verb stem endings
+                                            word_type = 'verb'
+                                            break
+                                # If no verb stem found, keep as noun (fallback)
                             elif word.endswith(('o', 'a', 'e', 'i')):
                                 if word.endswith(('o', 'a')):
                                     word_type = 'adjective'
@@ -143,8 +153,11 @@ def ai_translate():
                             if word_type == 'verb':
                                 if word.endswith(('ato', 'uto', 'ito')):
                                     example = f"Ho {word} ieri."
-                                elif word.endswith('are'):
+                                elif word.endswith(('are', 'ere', 'ire')):
                                     example = f"Voglio {word}."
+                                # Handle verb + pronoun combinations
+                                elif any(word.endswith(pronoun) for pronoun in ['ti', 'mi', 'lo', 'la', 'li', 'le', 'ci', 'vi', 'si', 'ne']):
+                                    example = f"Posso {word}."
                                 else:
                                     example = f"Devo {word}."
                             elif word_type == 'noun':
