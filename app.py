@@ -286,43 +286,23 @@ def chat():
         # Prepare the system prompt based on mode
         if strict_mode:
             # Strict mode: ONLY use vocabulary words - NO EXCEPTIONS
-            system_content = f"""Sei un tutor di italiano in modalità VOCABOLARIO STRETTO. 
+            system_content = f"""Sei un tutor di italiano amichevole. Rispondi SEMPRE in italiano usando SOLO le parole che lo studente conosce già: {', '.join(current_vocabulary)}
 
-REGOLE ASSOLUTE E INVIOLABILI:
-1. Rispondi SEMPRE in italiano, usando un linguaggio naturale ma corretto
-2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
-3. Puoi usare SOLO e ESCLUSIVAMENTE queste parole: {', '.join(current_vocabulary)}
-4. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
-
-VOCABOLARIO DISPONIBILE: {', '.join(current_vocabulary)}
-
-IMPORTANTE: 
-- NON puoi usare NESSUNA parola che non sia in questa lista
-- Se devi esprimere qualcosa ma non hai le parole giuste, riformula usando SOLO il vocabolario fornito
-- Se non riesci a esprimere un concetto con le parole disponibili, usa sinonimi o riformula completamente
-- NON introdurre mai nuove parole in modalità stretta
-- Se la frase non può essere completata con le parole disponibili, usa frasi più semplici o incomplete
-- È meglio una frase semplice e corretta che una frase complessa con parole non autorizzate"""
+Regole semplici:
+- Risposte brevi (massimo 10 parole)
+- Usa SOLO parole dal vocabolario fornito
+- Se non puoi esprimere qualcosa, usa frasi più semplici
+- Sii naturale e incoraggiante"""
         else:
             # Learning mode: MAX 5 new words per sentence, prioritize word limits over sentence completion
-            system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
-1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
-2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
-3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
-4. Introduci MASSIMO 5 NUOVE parole italiane per risposta che NON sono nel vocabolario
-5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
+            system_content = f"""Sei un tutor di italiano amichevole. Aiuta lo studente a imparare parlando naturalmente.
 
-REGOLE ASSOLUTE E INVIOLABILI:
-- MASSIMO 5 nuove parole per risposta - NON MAI DI PIÙ
-- Se non puoi completare una frase con solo 5 nuove parole, usa frasi più semplici
-- È meglio una frase semplice e corretta che una frase complessa con troppe parole nuove
-- Priorità ASSOLUTA: Rispetta il limite di 5 nuove parole > Completare la frase
-- Se devi scegliere tra una frase completa con 6+ nuove parole o una frase semplice con 5 nuove parole, scegli SEMPRE la seconda opzione
-- Usa principalmente parole familiari dal vocabolario fornito
-
-Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-5 nuove parole per risposta.
-Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto.
-Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 5 nuove parole."""
+Regole semplici:
+- Risposte brevi (massimo 10 parole)
+- Usa principalmente parole che lo studente conosce: {', '.join(current_vocabulary)}
+- Introduci 0-5 nuove parole quando necessario
+- Sii naturale e incoraggiante
+- Frasi semplici sono meglio di frasi complesse"""
         
         # Function to validate and potentially regenerate response
         def validate_and_regenerate_response(initial_response, mode, max_attempts=3):
@@ -355,14 +335,7 @@ Se non hai abbastanza parole familiari per creare una frase completa, crea una f
                         print(f"WARNING: Found {len(unauthorized_words)} unauthorized words: {unauthorized_words}")
                         if attempt < max_attempts - 1:
                             # Regenerate with stronger enforcement
-                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai usato parole non autorizzate: {', '.join(unauthorized_words[:5])}
-
-REGOLE ASSOLUTE:
-- Puoi usare SOLO queste parole: {', '.join(current_vocabulary)}
-- NESSUNA eccezione
-- Se non puoi esprimere qualcosa, usa frasi più semplici o riformula completamente
-
-Rispondi di nuovo usando SOLO le parole autorizzate:"""
+                            stronger_prompt = f"""Rispondi di nuovo in italiano, massimo 10 parole, usando SOLO parole autorizzate: {', '.join(current_vocabulary)}"""
                             
                             # Send regeneration request
                             regen_request = {
@@ -403,14 +376,7 @@ Rispondi di nuovo usando SOLO le parole autorizzate:"""
                         print(f"WARNING: AI introduced {len(new_words)} new words: {new_words}")
                         if attempt < max_attempts - 1:
                             # Regenerate with stronger enforcement
-                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 5.
-
-REGOLE ASSOLUTE:
-- MASSIMO 5 nuove parole per risposta
-- Priorità ASSOLUTA: Rispetta il limite > Completare la frase
-- Se necessario, usa frasi più semplici
-
-Rispondi di nuovo usando MASSIMO 5 nuove parole:"""
+                            stronger_prompt = f"""Rispondi di nuovo in italiano, massimo 10 parole, massimo 5 nuove parole:"""
                             
                             # Send regeneration request
                             regen_request = {
@@ -455,7 +421,7 @@ Rispondi di nuovo usando MASSIMO 5 nuove parole:"""
                 },
                 {
                     'role': 'user',
-                    'content': f"{message}\n\n{'⚠️ RICORDA: Usa SOLO le parole del vocabolario fornito!' if strict_mode else '⚠️ RICORDA: MASSIMO 2 nuove parole per risposta! Se necessario, usa frasi più semplici.'}"
+                    'content': f"{message}\n\n{'⚠️ Usa SOLO parole dal vocabolario!' if strict_mode else '⚠️ Massimo 5 nuove parole per risposta'}"
                 }
             ],
             'stream': False
