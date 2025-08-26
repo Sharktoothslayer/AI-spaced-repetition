@@ -18,9 +18,6 @@ sr_system = SpacedRepetition()
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
 DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
 
-# Free translation API (LibreTranslate)
-LIBRE_TRANSLATE_URL = "https://libretranslate.de/translate"
-
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -69,79 +66,82 @@ def ai_translate():
         if not word:
             return jsonify({'error': 'Word is required'}), 400
         
-        # Use LibreTranslate (free) instead of AI
+        # Use free Google Translate (no API key required)
         try:
-            # First, get the English translation
-            translation_response = requests.post(
-                LIBRE_TRANSLATE_URL,
-                json={
-                    'q': word,
-                    'source': 'it',
-                    'target': 'en',
-                    'format': 'text'
-                },
-                timeout=10
-            )
+            google_url = "https://translate.googleapis.com/translate_a/single"
+            params = {
+                'client': 'gtx',
+                'sl': 'it',
+                'tl': 'en',
+                'dt': 't',
+                'q': word
+            }
             
-            if translation_response.status_code == 200:
-                translation_data = translation_response.json()
-                english_translation = translation_data.get('translatedText', '')
+            response = requests.get(google_url, params=params, timeout=15)
+            if response.status_code == 200:
+                # Parse Google Translate response
+                data = response.json()
+                if data and len(data) > 0 and len(data[0]) > 0:
+                    english_translation = data[0][0][0]
+                    if english_translation and english_translation != word:
+                        print(f"  🌐 Google Translate: {word} -> {english_translation}")
+                        
+                        # Simple word type detection based on common patterns
+                        word_type = 'noun'  # default
+                        
+                        # Common Italian word endings and patterns
+                        if word.endswith(('are', 'ere', 'ire')):
+                            word_type = 'verb'
+                        elif word.endswith(('o', 'a', 'e', 'i')):
+                            if word.endswith(('o', 'a')):
+                                word_type = 'adjective'
+                            else:
+                                word_type = 'noun'
+                        elif word in ['di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra']:
+                            word_type = 'preposition'
+                        elif word in ['e', 'o', 'ma', 'se', 'che', 'perché']:
+                            word_type = 'conjunction'
+                        elif word in ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro', 'mi', 'ti', 'ci', 'vi']:
+                            word_type = 'pronoun'
+                        elif word in ['molto', 'poco', 'bene', 'male', 'qui', 'là', 'oggi', 'ieri']:
+                            word_type = 'adverb'
+                        elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
+                            word_type = 'interjection'
+                        
+                        # Generate a simple example sentence
+                        if word_type == 'verb':
+                            example = f"Voglio {word}." if word.endswith('are') else f"Devo {word}."
+                        elif word_type == 'noun':
+                            example = f"Questo è un {word}."
+                        elif word_type == 'adjective':
+                            example = f"È molto {word}."
+                        else:
+                            example = f"Uso {word} spesso."
+                        
+                        return jsonify({
+                            'translation': english_translation,
+                            'example': example,
+                            'word_type': word_type,
+                            'success': True
+                        })
+            
+            # If Google Translate fails, fall back to basic translation
+            return jsonify({
+                'translation': f'[Italian: {word}]',
+                'example': f'Esempio con {word}.',
+                'word_type': 'noun',
+                'success': False,
+                'error': 'Translation failed'
+            })
                 
-                # Simple word type detection based on common patterns
-                word_type = 'noun'  # default
-                
-                # Common Italian word endings and patterns
-                if word.endswith(('are', 'ere', 'ire')):
-                    word_type = 'verb'
-                elif word.endswith(('o', 'a', 'e', 'i')):
-                    if word.endswith(('o', 'a')):
-                        word_type = 'adjective'
-                    else:
-                        word_type = 'noun'
-                elif word in ['di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra']:
-                    word_type = 'preposition'
-                elif word in ['e', 'o', 'ma', 'se', 'che', 'perché']:
-                    word_type = 'conjunction'
-                elif word in ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro', 'mi', 'ti', 'ci', 'vi']:
-                    word_type = 'pronoun'
-                elif word in ['molto', 'poco', 'bene', 'male', 'qui', 'là', 'oggi', 'ieri']:
-                    word_type = 'adverb'
-                elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
-                    word_type = 'interjection'
-                
-                # Generate a simple example sentence
-                if word_type == 'verb':
-                    example = f"Voglio {word}." if word.endswith('are') else f"Devo {word}."
-                elif word_type == 'noun':
-                    example = f"Questo è un {word}."
-                elif word_type == 'adjective':
-                    example = f"È molto {word}."
-                else:
-                    example = f"Uso {word} spesso."
-                
-                return jsonify({
-                    'translation': english_translation,
-                    'example': example,
-                    'word_type': word_type,
-                    'success': True
-                })
-            else:
-                return jsonify({
-                    'translation': 'Translation failed',
-                    'example': 'Example not available',
-                    'word_type': 'noun',
-                    'success': False,
-                    'error': 'Translation service unavailable'
-                })
-                
-        except requests.exceptions.RequestException:
+        except Exception as e:
             # Fallback to basic translation
             return jsonify({
                 'translation': f'[Italian: {word}]',
                 'example': f'Esempio con {word}.',
                 'word_type': 'noun',
                 'success': False,
-                'error': 'Translation service unavailable'
+                'error': f'Translation service unavailable: {str(e)}'
             })
             
     except Exception as e:
@@ -389,8 +389,7 @@ Rispondi di nuovo usando SOLO le parole autorizzate:"""
                                 print(f"Failed to regenerate response: {regen_response.status_code}")
                                 break
                         else:
-                            # Final attempt failed, add warning
-                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il vocabolario stretto. Ecco la mia risposta: {initial_response}"
+                            # Final attempt failed, return original response without warning
                             break
                     else:
                         print(f"Strict mode validation passed - all words are from vocabulary")
@@ -438,8 +437,7 @@ Rispondi di nuovo usando MASSIMO 5 nuove parole:"""
                                 print(f"Failed to regenerate response: {regen_response.status_code}")
                                 break
                         else:
-                            # Final attempt failed, add warning
-                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 5 nuove parole. Ecco la mia risposta: {initial_response}"
+                            # Final attempt failed, return original response without warning
                             break
                     else:
                         print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")
