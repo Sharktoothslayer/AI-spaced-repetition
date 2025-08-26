@@ -304,25 +304,25 @@ IMPORTANTE:
 - Se la frase non può essere completata con le parole disponibili, usa frasi più semplici o incomplete
 - È meglio una frase semplice e corretta che una frase complessa con parole non autorizzate"""
         else:
-            # Learning mode: MAX 2 new words per sentence, prioritize word limits over sentence completion
+            # Learning mode: MAX 5 new words per sentence, prioritize word limits over sentence completion
             system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
 1. Rispondi sempre in italiano, usando un linguaggio naturale ma corretto
 2. Mantieni le risposte brevi (1-2 frasi massimo) e conversazionali
 3. Usa PRINCIPALMENTE parole dal vocabolario dello studente: {', '.join(current_vocabulary)}
-4. Introduci MASSIMO 2 NUOVE parole italiane per risposta che NON sono nel vocabolario
+4. Introduci MASSIMO 5 NUOVE parole italiane per risposta che NON sono nel vocabolario
 5. Sii incoraggiante e non troppo formale, ma sempre grammaticalmente corretto
 
 REGOLE ASSOLUTE E INVIOLABILI:
-- MASSIMO 2 nuove parole per risposta - NON MAI DI PIÙ
-- Se non puoi completare una frase con solo 2 nuove parole, usa frasi più semplici
+- MASSIMO 5 nuove parole per risposta - NON MAI DI PIÙ
+- Se non puoi completare una frase con solo 5 nuove parole, usa frasi più semplici
 - È meglio una frase semplice e corretta che una frase complessa con troppe parole nuove
-- Priorità ASSOLUTA: Rispetta il limite di 2 nuove parole > Completare la frase
-- Se devi scegliere tra una frase completa con 3+ nuove parole o una frase semplice con 2 nuove parole, scegli SEMPRE la seconda opzione
+- Priorità ASSOLUTA: Rispetta il limite di 5 nuove parole > Completare la frase
+- Se devi scegliere tra una frase completa con 6+ nuove parole o una frase semplice con 5 nuove parole, scegli SEMPRE la seconda opzione
 - Usa principalmente parole familiari dal vocabolario fornito
 
-Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
+Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-5 nuove parole per risposta.
 Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto.
-Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 2 nuove parole."""
+Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 5 nuove parole."""
         
         # Function to validate and potentially regenerate response
         def validate_and_regenerate_response(initial_response, mode, max_attempts=3):
@@ -400,18 +400,18 @@ Rispondi di nuovo usando SOLO le parole autorizzate:"""
                     # Count new words
                     new_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
                     
-                    if len(new_words) > 2:
+                    if len(new_words) > 5:
                         print(f"WARNING: AI introduced {len(new_words)} new words: {new_words}")
                         if attempt < max_attempts - 1:
                             # Regenerate with stronger enforcement
-                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 2.
+                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 5.
 
 REGOLE ASSOLUTE:
-- MASSIMO 2 nuove parole per risposta
+- MASSIMO 5 nuove parole per risposta
 - Priorità ASSOLUTA: Rispetta il limite > Completare la frase
 - Se necessario, usa frasi più semplici
 
-Rispondi di nuovo usando MASSIMO 2 nuove parole:"""
+Rispondi di nuovo usando MASSIMO 5 nuove parole:"""
                             
                             # Send regeneration request
                             regen_request = {
@@ -439,7 +439,7 @@ Rispondi di nuovo usando MASSIMO 2 nuove parole:"""
                                 break
                         else:
                             # Final attempt failed, add warning
-                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 2 nuove parole. Ecco la mia risposta: {initial_response}"
+                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 5 nuove parole. Ecco la mia risposta: {initial_response}"
                             break
                     else:
                         print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")

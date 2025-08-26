@@ -1007,6 +1007,16 @@
                                 Invia
                             </button>
                         </form>
+                        
+                        <!-- New words management buttons -->
+                        <div class="new-words-controls" style="margin-top: 10px; text-align: center;">
+                            <button id="addNewWordsBtn" class="add-word-btn" onclick="addNewWords()" style="display: none;">
+                                ➕ Add New Words to Vocabulary
+                            </button>
+                            <button id="endConversationBtn" class="add-word-btn" onclick="endConversation()" style="display: none; margin-left: 10px;">
+                                🔚 End Conversation
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1286,6 +1296,14 @@
 
         // Function to process AI response and highlight new words
         function processAIResponse(response) {
+            // Filter out ATTENZIONE warning messages
+            if (response.includes('⚠️ ATTENZIONE:')) {
+                const startIndex = response.indexOf('Ecco la mia risposta:');
+                if (startIndex !== -1) {
+                    response = response.substring(startIndex + 'Ecco la mia risposta:'.length).trim();
+                }
+            }
+            
             // Enhanced patterns to catch all Italian words including short ones
             const patterns = [
                 '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\w*\\b',
@@ -1302,18 +1320,17 @@
             // Process each pattern
             patterns.forEach(pattern => {
                 const regex = new RegExp(pattern, 'gi');
-                const matches = response.match(regex);
+                const matches = processedResponse.match(regex);
                 
                 if (matches) {
                     matches.forEach(match => {
                         const lowerMatch = match.toLowerCase();
                         
                         // Check if this word is not in current vocabulary
-                        if (!currentVocabulary.includes(lowerMatch) && 
-                            !currentVocabulary.includes(match) &&
-                            lowerMatch.length >= 2) { // Filter out single characters
-                            
-                            // Avoid duplicates
+                        if (!currentVocabulary.some(vocabWord => 
+                            vocabWord.toLowerCase() === lowerMatch
+                        )) {
+                            // Check if we haven't already found this word
                             if (!newWordsFound.some(w => w.word.toLowerCase() === lowerMatch)) {
                                 newWordsFound.push({
                                     word: match,
@@ -1335,11 +1352,11 @@
                 }
             });
             
-            // Highlight new words in the response
+            // Highlight new words in the response (red text instead of red bubbles)
             newWordsFound.forEach(wordObj => {
                 const regex = new RegExp(`\\b${wordObj.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
                 processedResponse = processedResponse.replace(regex, 
-                    `<span class="new-word" data-word="${wordObj.word}" style="color: red; font-weight: bold; animation: pulse 1s infinite;">${wordObj.word}</span>`
+                    `<span class="new-word" data-word="${wordObj.word}" style="color: red; font-weight: bold;">${wordObj.word}</span>`
                 );
             });
             
@@ -1426,7 +1443,7 @@
              
              // Set initial toggle label
              const toggleLabel = document.querySelector('.toggle-label');
-             toggleLabel.textContent = 'Learning Mode: ON';
+             toggleLabel.textContent = 'Learning Mode: ON (1-5 new words)';
              toggleLabel.style.color = '#ffc107';
          });
 
@@ -1465,7 +1482,7 @@
              } else {
                  toggleLabel.textContent = 'Learning Mode: ON';
                  toggleLabel.style.color = '#ffc107';
-                 console.log('🟡 LEARNING MODE ENABLED - AI can introduce 1-2 new words');
+                 console.log('🟡 LEARNING MODE ENABLED - AI can introduce 1-5 new words');
              }
              
              // Log current vocabulary for debugging
@@ -2196,6 +2213,19 @@
             } else {
                 alert(`Failed to add any new words. Please try again.`);
             }
+        }
+
+        // Function to end conversation and add new words
+        async function endConversation() {
+            if (newWords.length === 0) {
+                alert('No new words to add!');
+                return;
+            }
+            
+            const confirmed = confirm(`Add ${newWords.length} new words to your vocabulary?`);
+            if (!confirmed) return;
+            
+            await addNewWords();
         }
 
         // Function to reset conversation
