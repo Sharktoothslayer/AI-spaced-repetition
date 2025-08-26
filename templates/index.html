@@ -1139,31 +1139,30 @@
                 sendButton: !!sendButton,
                 chatMessages: !!chatMessages
             });
-            return;
-        }
-        
-        // Add event listeners
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message) {
-                addMessage(message, true);
-                messageInput.value = '';
-                sendMessage(message);
-            }
-        });
-        
-        // Allow Enter key to send message
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+        } else {
+            // Add event listeners
+            sendButton.addEventListener('click', () => {
                 const message = messageInput.value.trim();
                 if (message) {
                     addMessage(message, true);
                     messageInput.value = '';
                     sendMessage(message);
                 }
-            }
-        });
+            });
+            
+            // Allow Enter key to send message
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const message = messageInput.value.trim();
+                    if (message) {
+                        addMessage(message, true);
+                        messageInput.value = '';
+                        sendMessage(message);
+                    }
+                }
+            });
+        }
 
                  function addMessage(content, isUser = false) {
              const messageDiv = document.createElement('div');
