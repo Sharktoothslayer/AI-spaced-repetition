@@ -5,7 +5,6 @@ import os
 from dotenv import load_dotenv
 from spaced_repetition import SpacedRepetition
 import re
-import json
 
 load_dotenv()
 
@@ -13,25 +12,7 @@ app = Flask(__name__)
 CORS(app, origins=["*"], methods=["GET", "POST"], allow_headers=["Content-Type"])
 
 # Initialize spaced repetition system
-sr_system = SpacedRepetition("vocabulary.json")  # Use relative path for Docker volume persistence
-
-# Check if vocabulary file exists and initialize if needed
-def ensure_vocabulary_file():
-    """Ensure vocabulary file exists and has basic structure"""
-    try:
-        import os
-        if not os.path.exists("vocabulary.json"):
-            print("📝 Creating new vocabulary.json file")
-            with open("vocabulary.json", "w", encoding="utf-8") as f:
-                json.dump({}, f, ensure_ascii=False, indent=2)
-            print("✅ Vocabulary file created successfully")
-        else:
-            print(f"📁 Vocabulary file exists: {os.path.getsize('vocabulary.json')} bytes")
-    except Exception as e:
-        print(f"❌ Error ensuring vocabulary file: {e}")
-
-# Initialize vocabulary file
-ensure_vocabulary_file()
+sr_system = SpacedRepetition()
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
@@ -48,40 +29,14 @@ def index():
 def test():
     return jsonify({'status': 'ok', 'message': 'Backend is working'})
 
-@app.route('/api/debug/vocabulary')
-def debug_vocabulary():
-    """Debug endpoint to check vocabulary status"""
-    try:
-        import os
-        file_exists = os.path.exists("vocabulary.json")
-        file_size = os.path.getsize("vocabulary.json") if file_exists else 0
-        
-        words = sr_system.get_all_words()
-        word_count = len(words)
-        
-        return jsonify({
-            'status': 'ok',
-            'file_exists': file_exists,
-            'file_size': file_size,
-            'word_count': word_count,
-            'sample_words': [w['word'] for w in words[:10]] if words else [],
-            'data_file_path': sr_system.data_file
-        })
-    except Exception as e:
-        return jsonify({'status': 'error', 'error': str(e)}), 500
-
 # Spaced Repetition API endpoints
 @app.route('/api/sr/words', methods=['GET'])
 def get_words():
     """Get all vocabulary words"""
     try:
-        print(f"🔍 Loading vocabulary from: {sr_system.data_file}")
         words = sr_system.get_all_words()
-        print(f"📚 Loaded {len(words)} words from vocabulary")
-        print(f"📝 First few words: {[w['word'] for w in words[:5]] if words else 'None'}")
         return jsonify({'words': words})
     except Exception as e:
-        print(f"❌ Error loading vocabulary: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/sr/words', methods=['POST'])
@@ -347,9 +302,7 @@ IMPORTANTE:
 - Se non riesci a esprimere un concetto con le parole disponibili, usa sinonimi o riformula completamente
 - NON introdurre mai nuove parole in modalità stretta
 - Se la frase non può essere completata con le parole disponibili, usa frasi più semplici o incomplete
-- È meglio una frase semplice e corretta che una frase complessa con parole non autorizzate
-
-RICORDA: SOLO le parole fornite. NESSUNA eccezione."""
+- È meglio una frase semplice e corretta che una frase complessa con parole non autorizzate"""
         else:
             # Learning mode: MAX 2 new words per sentence, prioritize word limits over sentence completion
             system_content = f"""Sei un tutor di italiano in modalità APPRENDIMENTO. Il tuo ruolo è:
@@ -369,61 +322,129 @@ REGOLE ASSOLUTE E INVIOLABILI:
 
 Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nuove parole per risposta.
 Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto.
-Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 2 nuove parole.
-
-RICORDA: MASSIMO 2 nuove parole. NESSUNA eccezione."""
+Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 2 nuove parole."""
         
         # Function to validate and potentially regenerate response
         def validate_and_regenerate_response(initial_response, mode, max_attempts=3):
-            """Validate response and regenerate if it violates rules"""
-            print(f"🔍 Validating response in {mode} mode: {initial_response}")
-            
-            # Count Italian words in response
-            italian_words = []
-            # Comprehensive Italian word detection patterns
-            patterns = [
-                r'\b[aàeèéiìoòuù][aàeèéiìoòuù]*\b',  # Single vowels
-                r'\b[aàeèéiìoòuù][bcdfghjklmnpqrstvwxyz][aàeèéiìoòuù]*\b',  # Vowel-consonant-vowel
-                r'\b[bcdfghjklmnpqrstvwxyz][aàeèéiìoòuù][bcdfghjklmnpqrstvwxyz]*\b',  # Consonant-vowel-consonant
-                r'\b[bcdfghjklmnpqrstvwxyz][aàeèéiìoòuù][aàeèéiìoòuù]*\b',  # Consonant-vowel-vowel
-                r'\b[aàeèéiìoòuù][bcdfghjklmnpqrstvwxyz][bcdfghjklmnpqrstvwxyz]*\b',  # Vowel-consonant-consonant
-                r'\b[bcdfghjklmnpqrstvwxyz][bcdfghjklmnpqrstvwxyz][aàeèéiìoòuù]*\b'  # Consonant-consonant-vowel
-            ]
-            
-            for pattern in patterns:
-                matches = re.findall(pattern, initial_response, re.IGNORECASE)
-                italian_words.extend(matches)
-            
-            # Remove duplicates and filter out very short words
-            italian_words = list(set([word.lower() for word in italian_words if len(word) >= 2]))
-            
-            print(f"🔍 Found {len(italian_words)} Italian words: {italian_words}")
-            
-            if mode == 'strict':
-                # In strict mode, ALL words must be in vocabulary
-                unauthorized_words = [word for word in italian_words if word not in [w.lower() for w in current_vocabulary]]
-                if unauthorized_words:
-                    print(f"❌ Strict mode violation: {unauthorized_words} not in vocabulary")
-                    if max_attempts > 1:
-                        print(f"🔄 Regenerating response (attempts left: {max_attempts-1})")
-                        return "regenerate"
-                    else:
-                        print("⚠️ Final attempt failed, adding warning")
-                        return f"⚠️ ATTENZIONE: Non sono riuscito a rispettare la modalità vocabolario stretto. Ecco la mia risposta: {initial_response}"
+            for attempt in range(max_attempts):
+                print(f"Validation attempt {attempt + 1} for {mode} mode")
                 
-            elif mode == 'learning':
-                # In learning mode, MAX 2 new words per response
-                new_words = [word for word in italian_words if word not in [w.lower() for w in current_vocabulary]]
-                if len(new_words) > 2:
-                    print(f"❌ Learning mode violation: {len(new_words)} new words (max 2 allowed)")
-                    if max_attempts > 1:
-                        print(f"🔄 Regenerating response (attempts left: {max_attempts-1})")
-                        return "regenerate"
+                # Enhanced word detection patterns (same as frontend)
+                patterns = [
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[àèéìòù]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
+                ]
+                
+                words_in_response = []
+                for pattern in patterns:
+                    matches = re.findall(pattern, initial_response.lower())
+                    words_in_response.extend(matches)
+                
+                # Remove duplicates and filter out very short words that might be false positives
+                words_in_response = list(set([w for w in words_in_response if len(w) >= 2]))
+                
+                if mode == 'strict':
+                    # Check for unauthorized words
+                    unauthorized_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                    
+                    if unauthorized_words:
+                        print(f"WARNING: Found {len(unauthorized_words)} unauthorized words: {unauthorized_words}")
+                        if attempt < max_attempts - 1:
+                            # Regenerate with stronger enforcement
+                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai usato parole non autorizzate: {', '.join(unauthorized_words[:5])}
+
+REGOLE ASSOLUTE:
+- Puoi usare SOLO queste parole: {', '.join(current_vocabulary)}
+- NESSUNA eccezione
+- Se non puoi esprimere qualcosa, usa frasi più semplici o riformula completamente
+
+Rispondi di nuovo usando SOLO le parole autorizzate:"""
+                            
+                            # Send regeneration request
+                            regen_request = {
+                                'model': DEFAULT_MODEL,
+                                'messages': [
+                                    {'role': 'system', 'content': system_content},
+                                    {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
+                                ],
+                                'stream': False
+                            }
+                            
+                            regen_response = requests.post(
+                                f'{OLLAMA_BASE_URL}/api/chat',
+                                json=regen_request,
+                                timeout=30
+                            )
+                            
+                            if regen_response.status_code == 200:
+                                regen_data = regen_response.json()
+                                initial_response = regen_data.get('message', {}).get('content', initial_response)
+                                print(f"Regenerated response attempt {attempt + 1}")
+                                continue
+                            else:
+                                print(f"Failed to regenerate response: {regen_response.status_code}")
+                                break
+                        else:
+                            # Final attempt failed, add warning
+                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il vocabolario stretto. Ecco la mia risposta: {initial_response}"
+                            break
                     else:
-                        print("⚠️ Final attempt failed, adding warning")
-                        return f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 2 nuove parole. Ecco la mia risposta: {initial_response}"
+                        print(f"Strict mode validation passed - all words are from vocabulary")
+                        break
+                        
+                else:  # Learning mode
+                    # Count new words
+                    new_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                    
+                    if len(new_words) > 2:
+                        print(f"WARNING: AI introduced {len(new_words)} new words: {new_words}")
+                        if attempt < max_attempts - 1:
+                            # Regenerate with stronger enforcement
+                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 2.
+
+REGOLE ASSOLUTE:
+- MASSIMO 2 nuove parole per risposta
+- Priorità ASSOLUTA: Rispetta il limite > Completare la frase
+- Se necessario, usa frasi più semplici
+
+Rispondi di nuovo usando MASSIMO 2 nuove parole:"""
+                            
+                            # Send regeneration request
+                            regen_request = {
+                                'model': DEFAULT_MODEL,
+                                'messages': [
+                                    {'role': 'system', 'content': system_content},
+                                    {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
+                                ],
+                                'stream': False
+                            }
+                            
+                            regen_response = requests.post(
+                                f'{OLLAMA_BASE_URL}/api/chat',
+                                json=regen_request,
+                                timeout=30
+                            )
+                            
+                            if regen_response.status_code == 200:
+                                regen_data = regen_response.json()
+                                initial_response = regen_data.get('message', {}).get('content', initial_response)
+                                print(f"Regenerated response attempt {attempt + 1}")
+                                continue
+                            else:
+                                print(f"Failed to regenerate response: {regen_response.status_code}")
+                                break
+                        else:
+                            # Final attempt failed, add warning
+                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 2 nuove parole. Ecco la mia risposta: {initial_response}"
+                            break
+                    else:
+                        print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")
+                        break
             
-            print("✅ Response validation passed")
             return initial_response
         
         # Prepare request to Ollama with vocabulary-aware system prompt
@@ -464,46 +485,6 @@ RICORDA: MASSIMO 2 nuove parole. NESSUNA eccezione."""
                 ai_message, 
                 'strict' if strict_mode else 'learning'
             )
-            
-            # If validation suggests regeneration, try again
-            if final_response == "regenerate":
-                print("🔄 Attempting to regenerate response...")
-                # Try one more time with stronger prompt
-                stronger_prompt = f"""ATTENZIONE CRITICA: 
-
-REGOLE ASSOLUTE E INVIOLABILI:
-{'Usa SOLO queste parole: ' + ', '.join(current_vocabulary) if strict_mode else 'MASSIMO 2 nuove parole per risposta. Priorità ASSOLUTA: Rispetta il limite > Completare la frase'}
-
-Se necessario, usa frasi più semplici o riformula completamente.
-
-Rispondi di nuovo:"""
-                
-                regen_request = {
-                    'model': DEFAULT_MODEL,
-                    'messages': [
-                        {'role': 'system', 'content': system_content},
-                        {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
-                    ],
-                    'stream': False
-                }
-                
-                try:
-                    regen_response = requests.post(
-                        f'{OLLAMA_BASE_URL}/api/chat',
-                        json=regen_request,
-                        timeout=30
-                    )
-                    
-                    if regen_response.status_code == 200:
-                        regen_data = regen_response.json()
-                        final_response = regen_data.get('message', {}).get('content', ai_message)
-                        print("✅ Response regenerated successfully")
-                    else:
-                        print(f"❌ Failed to regenerate: {regen_response.status_code}")
-                        final_response = ai_message
-                except Exception as e:
-                    print(f"❌ Error during regeneration: {e}")
-                    final_response = ai_message
             
             return jsonify({
                 'response': final_response,

@@ -969,19 +969,21 @@
             <!-- Chat Tab -->
             <div class="tab-content active" id="chat-tab">
                 <div class="chat-container">
-                    <div class="chat-header">
-                        <h1>🇮🇹 Italian AI Tutor</h1>
-                        <p>Practice Italian with AI assistance</p>
-                        
-                        <!-- Vocabulary Mode Toggle -->
-                        <div class="toggle-container">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="vocabularyToggle" onchange="toggleVocabularyMode()">
-                                <span class="slider"></span>
-                            </label>
-                            <span class="toggle-label">Learning Mode: ON</span>
-                        </div>
-                    </div>
+                                         <div class="chat-header">
+                         <h1>AI Italian Tutor</h1>
+                         <div class="chat-controls">
+                             <div class="vocabulary-toggle">
+                                 <label class="toggle-switch">
+                                     <input type="checkbox" id="vocabularyToggle">
+                                     <span class="slider"></span>
+                                 </label>
+                                 <span class="toggle-label">Strict Vocabulary Mode</span>
+                             </div>
+                             <button id="endConversationBtn" class="end-conversation-btn" style="display: none;">
+                                 📚 Add New Words to Vocabulary
+                             </button>
+                         </div>
+                     </div>
                     
                     <div class="chat-messages" id="chatMessages">
                         <div class="message ai">
@@ -993,15 +995,18 @@
                     </div>
                     
                     <div class="chat-input-container">
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Type your message in Italian..." maxlength="500">
-                        <button id="sendBtn" class="send-btn" onclick="sendMessage()">Send</button>
-                    </div>
-                    
-                    <!-- Add New Words Button -->
-                    <div style="text-align: center; margin-top: 20px;">
-                        <button id="addNewWordsBtn" class="add-word-btn" onclick="addNewWords()" style="display: none;">
-                            ➕ Add New Words to Vocabulary
-                        </button>
+                        <form class="chat-input-form" id="chatForm">
+                            <input 
+                                type="text" 
+                                class="chat-input" 
+                                id="messageInput" 
+                                placeholder="Scrivi il tuo messaggio qui..."
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="send-button" id="sendButton">
+                                Invia
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1340,22 +1345,7 @@
             
             // Show "Add New Words" button if new words were found
             if (newWordsFound.length > 0) {
-                const addNewWordsBtn = document.getElementById('addNewWordsBtn');
-                if (addNewWordsBtn) {
-                    addNewWordsBtn.style.display = 'block';
-                } else {
-                    console.warn('Add New Words button not found in DOM');
-                }
-            }
-            
-            // Also show end conversation button if new words were found
-            if (newWordsFound.length > 0) {
-                const endConversationBtn = document.getElementById('endConversationBtn');
-                if (endConversationBtn) {
-                    endConversationBtn.style.display = 'block';
-                } else {
-                    console.warn('End Conversation button not found in DOM');
-                }
+                document.getElementById('addNewWordsBtn').style.display = 'block';
             }
             
             return processedResponse;
@@ -2175,10 +2165,7 @@
                 
                 // Clear new words and reload vocabulary
                 newWords = [];
-                const addNewWordsBtn = document.getElementById('addNewWordsBtn');
-                if (addNewWordsBtn) {
-                    addNewWordsBtn.style.display = 'none';
-                }
+                document.getElementById('addNewWordsBtn').style.display = 'none';
                 
                 // Reload vocabulary to show new words
                 await loadVocabulary();
@@ -2191,38 +2178,13 @@
         // Function to reset conversation
         function resetConversation() {
             newWords = [];
-            const addNewWordsBtn = document.getElementById('addNewWordsBtn');
-            if (addNewWordsBtn) {
-                addNewWordsBtn.style.display = 'none';
-            }
+            document.getElementById('addNewWordsBtn').style.display = 'none';
             
             // Clear chat messages
             const chatMessages = document.getElementById('chatMessages');
-            if (chatMessages) {
-                chatMessages.innerHTML = '';
-            }
+            chatMessages.innerHTML = '';
             
             console.log('Conversation reset - new words cleared');
-        }
-
-        // Function to toggle vocabulary mode
-        function toggleVocabularyMode() {
-            const toggle = document.getElementById('vocabularyToggle');
-            const toggleLabel = document.querySelector('.toggle-label');
-            const isStrictMode = toggle.checked;
-            
-            if (isStrictMode) {
-                toggleLabel.textContent = 'Strict Mode: ON';
-                toggleLabel.style.color = '#28a745';
-                console.log('🟢 Switched to STRICT vocabulary mode');
-            } else {
-                toggleLabel.textContent = 'Learning Mode: ON';
-                toggleLabel.style.color = '#ffc107';
-                console.log('🟡 Switched to LEARNING mode');
-            }
-            
-            // Reset conversation when mode changes
-            resetConversation();
         }
     </script>
 </body>
