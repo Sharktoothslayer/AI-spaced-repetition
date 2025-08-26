@@ -108,6 +108,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         .chat-header {
@@ -204,10 +205,135 @@
              transition: all 0.3s ease;
          }
 
-         .end-conversation-btn:hover {
-             background: #218838;
-             transform: translateY(-1px);
-         }
+                 .end-conversation-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        /* Enhanced Button Styles */
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0);
+        }
+
+        .word-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Loading Speech Bubble */
+        .ai-thinking {
+            display: flex;
+            justify-content: flex-start;
+            margin: 15px 0;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .thinking-bubble {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 200px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: thinking 1.4s infinite ease-in-out;
+        }
+
+        .thinking-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        .thinking-text {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        @keyframes thinking {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Success animation for button */
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+            animation: successPulse 0.6s ease-in-out;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
 
          /* New Word Highlighting */
          .new-word {
@@ -934,11 +1060,11 @@
                          <h1>AI Italian Tutor</h1>
                          <div class="chat-controls">
                              <div class="vocabulary-toggle">
-                                 <label class="toggle-switch">
+                                 <label class="toggle-label">
                                      <input type="checkbox" id="vocabularyToggle">
-                                     <span class="slider"></span>
+                                     <span class="toggle-slider"></span>
                                  </label>
-                                 <span class="toggle-label">Strict Vocabulary Mode</span>
+                                 <span class="toggle-text">Learning Mode: ON (1-5 new words)</span>
                              </div>
                              <button id="endConversationBtn" class="end-conversation-btn" style="display: none;">
                                  📚 Add New Words to Vocabulary
@@ -952,6 +1078,18 @@
                             <div class="message-content">
                                 Ciao! Sono il tuo tutor di italiano. Come posso aiutarti oggi?
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading indicator -->
+                    <div id="aiThinking" class="ai-thinking" style="display: none;">
+                        <div class="thinking-bubble">
+                            <div class="thinking-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="thinking-text">AI is thinking...</span>
                         </div>
                     </div>
                     
@@ -971,10 +1109,11 @@
                         
                         <!-- New words management buttons -->
                         <div class="new-words-controls" style="margin-top: 10px; text-align: center;">
-                            <button id="addNewWordsBtn" class="add-word-btn" onclick="addNewWords()" style="display: none;">
-                                ➕ Add New Words to Vocabulary
+                            <button id="addNewWordsBtn" class="btn btn-primary" onclick="addNewWords()" style="display: none;">
+                                <span class="btn-text">➕ Add New Words</span>
+                                <span class="word-count" id="newWordCount">(0)</span>
                             </button>
-                            <button id="endConversationBtn" class="add-word-btn" onclick="endConversation()" style="display: none; margin-left: 10px;">
+                            <button id="endConversationBtn" class="btn btn-secondary" onclick="endConversation()" style="display: none; margin-left: 10px;">
                                 🔚 End Conversation
                             </button>
                         </div>
@@ -1172,56 +1311,67 @@
             }, 5000);
         }
 
-                 async function sendMessage(message) {
-             try {
-                 sendButton.disabled = true;
-                 sendButton.textContent = 'Sending...';
-                 
-                 // Get current vocabulary state
-                 const isStrictMode = document.getElementById('vocabularyToggle').checked;
-                 
-                 console.log('📤 Sending message with settings:');
-                 console.log('  - Strict Mode:', isStrictMode);
-                 console.log('  - Vocabulary Size:', currentVocabulary.length);
-                 console.log('  - Available Words:', currentVocabulary);
-                 console.log('  - Message:', message);
-                 
-                 const response = await fetch('/api/chat', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json',
-                     },
-                     body: JSON.stringify({ 
-                         message: message,
-                         strict_mode: isStrictMode,
-                         current_vocabulary: currentVocabulary
-                     })
-                 });
-                 
-                 const data = await response.json();
-                 
-                 if (response.ok) {
-                     console.log('📥 AI Response received:', data.response);
-                     
-                     // Process AI response to highlight new words
-                     const processedResponse = processAIResponse(data.response);
-                     addMessage(processedResponse, false);
-                     
-                     // Show end conversation button if new words were introduced
-                     if (newWordsIntroduced.size > 0) {
-                         document.getElementById('endConversationBtn').style.display = 'block';
-                     }
-                 } else {
-                     showError(data.error || 'Failed to get response from AI');
-                 }
-             } catch (error) {
-                 showError('Network error. Please check your connection.');
-                 console.error('Error:', error);
-             } finally {
-                 sendButton.disabled = false;
-                 sendButton.textContent = 'Send';
-             }
-         }
+                         async function sendMessage(message) {
+            try {
+                sendButton.disabled = true;
+                sendButton.textContent = 'Sending...';
+                
+                // Show loading indicator
+                const aiThinking = document.getElementById('aiThinking');
+                aiThinking.style.display = 'flex';
+                
+                // Get current vocabulary state
+                const isStrictMode = document.getElementById('vocabularyToggle').checked;
+                
+                console.log('📤 Sending message with settings:');
+                console.log('  - Strict Mode:', isStrictMode);
+                console.log('  - Vocabulary Size:', currentVocabulary.length);
+                console.log('  - Available Words:', currentVocabulary);
+                console.log('  - Message:', message);
+                
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        message: message,
+                        strict_mode: isStrictMode,
+                        current_vocabulary: currentVocabulary
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    console.log('📥 AI Response received:', data.response);
+                    
+                    // Hide loading indicator
+                    aiThinking.style.display = 'none';
+                    
+                    // Process AI response to highlight new words
+                    const processedResponse = processAIResponse(data.response);
+                    addMessage(processedResponse, false);
+                    
+                    // Show end conversation button if new words were introduced
+                    if (newWordsIntroduced.size > 0) {
+                        document.getElementById('endConversationBtn').style.display = 'block';
+                    }
+                } else {
+                    // Hide loading indicator on error
+                    aiThinking.style.display = 'none';
+                    showError(data.error || 'Failed to get response from AI');
+                }
+            } catch (error) {
+                // Hide loading indicator on error
+                aiThinking.style.display = 'none';
+                showError('Network error. Please check your connection.');
+                console.error('Error:', error);
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send';
+            }
+        }
 
         // Function to get context-aware translation for a word
          async function getContextAwareTranslation(word, context = '') {
@@ -1366,10 +1516,14 @@
             // Show "Add New Words" button if new words were found
             if (newWordsFound.length > 0) {
                 const addNewWordsBtn = document.getElementById('addNewWordsBtn');
-                if (addNewWordsBtn) {
-                    addNewWordsBtn.style.display = 'block';
+                const endConversationBtn = document.getElementById('endConversationBtn');
+                if (addNewWordsBtn && endConversationBtn) {
+                    addNewWordsBtn.style.display = 'inline-block';
+                    endConversationBtn.style.display = 'inline-block';
+                    // Update the word count display
+                    document.getElementById('newWordCount').textContent = `(${newWordsFound.length})`;
                 } else {
-                    console.warn('Add New Words button not found in DOM');
+                    console.warn('Add New Words or End Conversation button not found in DOM');
                 }
             }
             
@@ -2124,6 +2278,12 @@
                 return;
             }
 
+            // Show loading state
+            const addNewWordsBtn = document.getElementById('addNewWordsBtn');
+            const originalText = addNewWordsBtn.innerHTML;
+            addNewWordsBtn.innerHTML = '<span class="btn-text">🔄 Adding...</span><span class="word-count" id="newWordCount">(0)</span>';
+            addNewWordsBtn.disabled = true;
+
             let addedCount = 0;
             let failedCount = 0;
 
@@ -2181,11 +2341,19 @@
 
             // Show results
             if (addedCount > 0) {
+                // Show success animation briefly before hiding
+                addNewWordsBtn.classList.add('btn-success');
+                setTimeout(() => {
+                    addNewWordsBtn.classList.remove('btn-success');
+                }, 600);
+                
                 alert(`Successfully added ${addedCount} new words to your vocabulary!${failedCount > 0 ? `\nFailed to add ${failedCount} words.` : ''}`);
                 
-                // Clear new words and reload vocabulary
+                // Clear new words and hide buttons
                 newWords = [];
                 document.getElementById('addNewWordsBtn').style.display = 'none';
+                document.getElementById('endConversationBtn').style.display = 'none';
+                document.getElementById('newWordCount').textContent = '(0)';
                 
                 // Reload vocabulary to show new words
                 await loadVocabulary();
@@ -2193,6 +2361,10 @@
             } else {
                 alert(`Failed to add any new words. Please try again.`);
             }
+            
+            // Restore button state
+            addNewWordsBtn.disabled = false;
+            addNewWordsBtn.innerHTML = originalText;
         }
 
         // Function to end conversation and add new words
@@ -2212,6 +2384,11 @@
         function resetConversation() {
             newWords = [];
             document.getElementById('addNewWordsBtn').style.display = 'none';
+            document.getElementById('endConversationBtn').style.display = 'none';
+            document.getElementById('newWordCount').textContent = '(0)';
+            
+            // Hide loading indicator
+            document.getElementById('aiThinking').style.display = 'none';
             
             // Clear chat messages
             const chatMessages = document.getElementById('chatMessages');
