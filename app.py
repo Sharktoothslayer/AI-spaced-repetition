@@ -4,6 +4,7 @@ import requests
 import os
 from dotenv import load_dotenv
 from spaced_repetition import SpacedRepetition
+import re
 
 load_dotenv()
 
@@ -16,6 +17,9 @@ sr_system = SpacedRepetition()
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
 DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
+
+# Free translation API (LibreTranslate)
+LIBRE_TRANSLATE_URL = "https://libretranslate.de/translate"
 
 @app.route('/')
 def index():
@@ -56,7 +60,7 @@ def add_word():
 
 @app.route('/api/sr/ai-translate', methods=['POST'])
 def ai_translate():
-    """Use AI to translate and provide context for a word"""
+    """Use free translation API to translate and provide context for a word"""
     try:
         data = request.get_json()
         word = data.get('word', '').strip()
@@ -65,119 +69,81 @@ def ai_translate():
         if not word:
             return jsonify({'error': 'Word is required'}), 400
         
-        # Prepare request to Ollama for translation with context awareness
-        if context:
-            system_content = f"""You are an Italian translation assistant. For each Italian word provided WITH CONTEXT, respond ONLY with a JSON in this exact format:
-
-{{
-  "translation": "English translation based on context",
-  "example": "Example sentence in Italian using this word",
-  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"
-}}
-
-IMPORTANT:
-- word_type must be ONLY ONE English word type
-- Do not include multiple types separated by slashes
-- Do not include any other text, only the JSON
-- Use standard English grammar terms
-- Consider the context to provide the most accurate translation
-- For words with multiple meanings, choose the meaning that fits the context best"""
-            
-            user_content = f'Translate this Italian word to English based on the context and provide exactly ONE word type:\n\nWord: {word}\nContext: {context}'
-        else:
-            system_content = 'You are an Italian translation assistant. For each Italian word provided, respond ONLY with a JSON in this exact format:\n{\n  "translation": "English translation",\n  "example": "Example sentence in Italian using this word",\n  "word_type": "ONE word type in English (verb, noun, adjective, adverb, pronoun, preposition, conjunction, interjection)"\n}\n\nIMPORTANT:\n- word_type must be ONLY ONE English word type\n- Do not include multiple types separated by slashes\n- Do not include any other text, only the JSON\n- Use standard English grammar terms'
-            
-            user_content = f'Translate this Italian word to English and provide exactly ONE word type: {word}'
-        
-        ollama_request = {
-            'model': DEFAULT_MODEL,
-            'messages': [
-                {
-                    'role': 'system',
-                    'content': system_content
+        # Use LibreTranslate (free) instead of AI
+        try:
+            # First, get the English translation
+            translation_response = requests.post(
+                LIBRE_TRANSLATE_URL,
+                json={
+                    'q': word,
+                    'source': 'it',
+                    'target': 'en',
+                    'format': 'text'
                 },
-                {
-                    'role': 'user',
-                    'content': user_content
-                }
-            ],
-            'stream': False
-        }
-        
-        print(f"AI translation request for word: {word}")
-        print(f"System prompt: {ollama_request['messages'][0]['content']}")
-        
-        # Send request to Ollama
-        response = requests.post(
-            f'{OLLAMA_BASE_URL}/api/chat',
-            json=ollama_request,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            ollama_response = response.json()
-            ai_message = ollama_response.get('message', {}).get('content', '')
+                timeout=10
+            )
             
-            try:
-                # Try to parse the JSON response
-                import json
-                translation_data = json.loads(ai_message)
+            if translation_response.status_code == 200:
+                translation_data = translation_response.json()
+                english_translation = translation_data.get('translatedText', '')
                 
-                # Clean up word_type to ensure only one type
-                word_type = translation_data.get('word_type', '')
-                print(f"Original word_type from AI: '{word_type}'")
+                # Simple word type detection based on common patterns
+                word_type = 'noun'  # default
                 
-                if '/' in word_type or '\\' in word_type:
-                    # If multiple types are provided, take the first one
-                    word_type = word_type.split('/')[0].split('\\')[0].strip()
-                    print(f"Cleaned word_type after splitting: '{word_type}'")
-                
-                # Ensure word_type is a standard English grammar term
-                standard_types = ['verb', 'noun', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'interjection']
-                if word_type.lower() not in standard_types:
-                    # If not a standard type, try to map common variations
-                    word_type_lower = word_type.lower()
-                    if 'verbo' in word_type_lower or 'verb' in word_type_lower:
-                        word_type = 'verb'
-                    elif 'sostantivo' in word_type_lower or 'noun' in word_type_lower:
-                        word_type = 'noun'
-                    elif 'aggettivo' in word_type_lower or 'adjective' in word_type_lower:
+                # Common Italian word endings and patterns
+                if word.endswith(('are', 'ere', 'ire')):
+                    word_type = 'verb'
+                elif word.endswith(('o', 'a', 'e', 'i')):
+                    if word.endswith(('o', 'a')):
                         word_type = 'adjective'
-                    elif 'avverbio' in word_type_lower or 'adverb' in word_type_lower:
-                        word_type = 'adverb'
-                    elif 'pronome' in word_type_lower or 'pronoun' in word_type_lower:
-                        word_type = 'pronoun'
-                    elif 'preposizione' in word_type_lower or 'preposition' in word_type_lower:
-                        word_type = 'preposition'
-                    elif 'congiunzione' in word_type_lower or 'conjunction' in word_type_lower:
-                        word_type = 'conjunction'
-                    elif 'interiezione' in word_type_lower or 'interjection' in word_type_lower:
-                        word_type = 'interjection'
                     else:
-                        word_type = 'noun'  # Default fallback
+                        word_type = 'noun'
+                elif word in ['di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra']:
+                    word_type = 'preposition'
+                elif word in ['e', 'o', 'ma', 'se', 'che', 'perché']:
+                    word_type = 'conjunction'
+                elif word in ['io', 'tu', 'lui', 'lei', 'noi', 'voi', 'loro', 'mi', 'ti', 'ci', 'vi']:
+                    word_type = 'pronoun'
+                elif word in ['molto', 'poco', 'bene', 'male', 'qui', 'là', 'oggi', 'ieri']:
+                    word_type = 'adverb'
+                elif word in ['ciao', 'ehi', 'oh', 'ah', 'ecco']:
+                    word_type = 'interjection'
                 
-                print(f"Final cleaned word_type: '{word_type}'")
+                # Generate a simple example sentence
+                if word_type == 'verb':
+                    example = f"Voglio {word}." if word.endswith('are') else f"Devo {word}."
+                elif word_type == 'noun':
+                    example = f"Questo è un {word}."
+                elif word_type == 'adjective':
+                    example = f"È molto {word}."
+                else:
+                    example = f"Uso {word} spesso."
                 
                 return jsonify({
-                    'translation': translation_data.get('translation', ''),
-                    'example': translation_data.get('example', ''),
+                    'translation': english_translation,
+                    'example': example,
                     'word_type': word_type,
                     'success': True
                 })
-            except json.JSONDecodeError:
-                # If JSON parsing fails, try to extract information manually
+            else:
                 return jsonify({
                     'translation': 'Translation failed',
                     'example': 'Example not available',
-                    'word_type': 'Unknown',
+                    'word_type': 'noun',
                     'success': False,
-                    'raw_response': ai_message
+                    'error': 'Translation service unavailable'
                 })
-        else:
-            return jsonify({'error': f'Ollama error: {response.status_code}'}), 500
+                
+        except requests.exceptions.RequestException:
+            # Fallback to basic translation
+            return jsonify({
+                'translation': f'[Italian: {word}]',
+                'example': f'Esempio con {word}.',
+                'word_type': 'noun',
+                'success': False,
+                'error': 'Translation service unavailable'
+            })
             
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Connection error: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
@@ -358,6 +324,129 @@ Strategia: Usa principalmente parole familiari, ma introduci naturalmente 1-2 nu
 Rendi le nuove parole contestualmente chiare così lo studente può capirle dal contesto.
 Se non hai abbastanza parole familiari per creare una frase completa, crea una frase più semplice ma rispetta SEMPRE il limite di 2 nuove parole."""
         
+        # Function to validate and potentially regenerate response
+        def validate_and_regenerate_response(initial_response, mode, max_attempts=3):
+            for attempt in range(max_attempts):
+                print(f"Validation attempt {attempt + 1} for {mode} mode")
+                
+                # Enhanced word detection patterns (same as frontend)
+                patterns = [
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    r'\b[àèéìòù]\b',
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
+                ]
+                
+                words_in_response = []
+                for pattern in patterns:
+                    matches = re.findall(pattern, initial_response.lower())
+                    words_in_response.extend(matches)
+                
+                # Remove duplicates and filter out very short words that might be false positives
+                words_in_response = list(set([w for w in words_in_response if len(w) >= 2]))
+                
+                if mode == 'strict':
+                    # Check for unauthorized words
+                    unauthorized_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                    
+                    if unauthorized_words:
+                        print(f"WARNING: Found {len(unauthorized_words)} unauthorized words: {unauthorized_words}")
+                        if attempt < max_attempts - 1:
+                            # Regenerate with stronger enforcement
+                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai usato parole non autorizzate: {', '.join(unauthorized_words[:5])}
+
+REGOLE ASSOLUTE:
+- Puoi usare SOLO queste parole: {', '.join(current_vocabulary)}
+- NESSUNA eccezione
+- Se non puoi esprimere qualcosa, usa frasi più semplici o riformula completamente
+
+Rispondi di nuovo usando SOLO le parole autorizzate:"""
+                            
+                            # Send regeneration request
+                            regen_request = {
+                                'model': DEFAULT_MODEL,
+                                'messages': [
+                                    {'role': 'system', 'content': system_content},
+                                    {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
+                                ],
+                                'stream': False
+                            }
+                            
+                            regen_response = requests.post(
+                                f'{OLLAMA_BASE_URL}/api/chat',
+                                json=regen_request,
+                                timeout=30
+                            )
+                            
+                            if regen_response.status_code == 200:
+                                regen_data = regen_response.json()
+                                initial_response = regen_data.get('message', {}).get('content', initial_response)
+                                print(f"Regenerated response attempt {attempt + 1}")
+                                continue
+                            else:
+                                print(f"Failed to regenerate response: {regen_response.status_code}")
+                                break
+                        else:
+                            # Final attempt failed, add warning
+                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il vocabolario stretto. Ecco la mia risposta: {initial_response}"
+                            break
+                    else:
+                        print(f"Strict mode validation passed - all words are from vocabulary")
+                        break
+                        
+                else:  # Learning mode
+                    # Count new words
+                    new_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
+                    
+                    if len(new_words) > 2:
+                        print(f"WARNING: AI introduced {len(new_words)} new words: {new_words}")
+                        if attempt < max_attempts - 1:
+                            # Regenerate with stronger enforcement
+                            stronger_prompt = f"""ATTENZIONE CRITICA: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 2.
+
+REGOLE ASSOLUTE:
+- MASSIMO 2 nuove parole per risposta
+- Priorità ASSOLUTA: Rispetta il limite > Completare la frase
+- Se necessario, usa frasi più semplici
+
+Rispondi di nuovo usando MASSIMO 2 nuove parole:"""
+                            
+                            # Send regeneration request
+                            regen_request = {
+                                'model': DEFAULT_MODEL,
+                                'messages': [
+                                    {'role': 'system', 'content': system_content},
+                                    {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
+                                ],
+                                'stream': False
+                            }
+                            
+                            regen_response = requests.post(
+                                f'{OLLAMA_BASE_URL}/api/chat',
+                                json=regen_request,
+                                timeout=30
+                            )
+                            
+                            if regen_response.status_code == 200:
+                                regen_data = regen_response.json()
+                                initial_response = regen_data.get('message', {}).get('content', initial_response)
+                                print(f"Regenerated response attempt {attempt + 1}")
+                                continue
+                            else:
+                                print(f"Failed to regenerate response: {regen_response.status_code}")
+                                break
+                        else:
+                            # Final attempt failed, add warning
+                            initial_response = f"⚠️ ATTENZIONE: Non sono riuscito a rispettare il limite di 2 nuove parole. Ecco la mia risposta: {initial_response}"
+                            break
+                    else:
+                        print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")
+                        break
+            
+            return initial_response
+        
         # Prepare request to Ollama with vocabulary-aware system prompt
         ollama_request = {
             'model': DEFAULT_MODEL,
@@ -391,67 +480,14 @@ Se non hai abbastanza parole familiari per creare una frase completa, crea una f
             ollama_response = response.json()
             ai_message = ollama_response.get('message', {}).get('content', 'Sorry, I could not generate a response.')
             
-            # Validate response in strict mode
-            if strict_mode:
-                print(f"Validating strict mode response...")
-                # Check if response contains any words not in vocabulary
-                import re
-                # Simple word detection for validation
-                words_in_response = re.findall(r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b', ai_message.lower())
-                unauthorized_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
-                
-                if unauthorized_words:
-                    print(f"WARNING: AI used unauthorized words in strict mode: {unauthorized_words}")
-                    # Force AI to use only vocabulary words by regenerating
-                    ai_message = f"Mi dispiace, devo usare solo le parole del tuo vocabolario. Provo a riformulare: {ai_message}"
-                    # For now, just log the warning. In production, you might want to regenerate the response
-                else:
-                    print(f"Strict mode validation passed - all words are from vocabulary")
-            
-            # Validate response in learning mode
-            else:
-                print(f"Validating learning mode response...")
-                import re
-                # Enhanced word detection for validation (same patterns as frontend)
-                patterns = [
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
-                    r'\b[àèéìòù]\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
-                ]
-                
-                words_in_response = []
-                for pattern in patterns:
-                    matches = re.findall(pattern, ai_message.lower())
-                    words_in_response.extend(matches)
-                
-                # Remove duplicates
-                words_in_response = list(set(words_in_response))
-                
-                # Count new words
-                new_words = [word for word in words_in_response if word not in [w.lower() for w in current_vocabulary]]
-                
-                if len(new_words) > 2:
-                    print(f"WARNING: AI introduced {len(new_words)} new words in learning mode: {new_words}")
-                    print(f"This exceeds the limit of 2 new words. Response will be regenerated.")
-                    
-                    # Regenerate response with stronger enforcement
-                    stronger_prompt = f"""ATTENZIONE: Hai introdotto {len(new_words)} nuove parole, ma il limite è MASSIMO 2.
-                    
-Riformula la risposta usando MASSIMO 2 nuove parole. Se necessario, usa frasi più semplici.
-Risposta originale: {ai_message}
-
-Nuova risposta (max 2 nuove parole):"""
-                    
-                    # For now, just log the warning and add a note. In production, you might want to regenerate
-                    ai_message = f"⚠️ ATTENZIONE: Ho introdotto troppe nuove parole ({len(new_words)}). Dovrei usarne massimo 2. Ecco la mia risposta: {ai_message}"
-                else:
-                    print(f"Learning mode validation passed - {len(new_words)} new words introduced (within limit)")
+            # Validate and potentially regenerate response
+            final_response = validate_and_regenerate_response(
+                ai_message, 
+                'strict' if strict_mode else 'learning'
+            )
             
             return jsonify({
-                'response': ai_message,
+                'response': final_response,
                 'model': DEFAULT_MODEL
             })
         else:

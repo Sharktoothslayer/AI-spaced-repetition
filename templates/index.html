@@ -1229,132 +1229,127 @@
             await sendMessage(message);
         });
 
-                 // Process AI response to identify and highlight new words
-         function processAIResponse(response) {
-             console.log('Processing AI response for new words...');
-             console.log('Current vocabulary size:', currentVocabulary.length);
-             console.log('Response:', response);
-             
-             // Enhanced Italian word detection with multiple regex patterns to catch ALL Italian words
-             const patterns = [
-                 // Pattern 1: Standard Italian words (including short ones like "di", "a", "o", "il")
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
-                 // Pattern 2: Catch very short words that might be missed (including single characters like "ò")
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi,
-                 // Pattern 3: Catch words with apostrophes (like "dell'", "nell'")
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b/gi,
-                 // Pattern 4: Catch contractions (like "del", "nel", "al")
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b/gi,
-                 // Pattern 5: Catch single accented characters and very short words that might be missed
-                 /\b[àèéìòù]\b/gi,
-                 // Pattern 6: Catch any remaining Italian characters that might be standalone
-                 /\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b/gi
-             ];
-             
-             let allWords = [];
-             patterns.forEach(pattern => {
-                 const matches = response.match(pattern) || [];
-                 allWords = allWords.concat(matches);
-             });
-             
-             // Remove duplicates and filter
-             const uniqueWords = [...new Set(allWords)];
-             console.log('Detected words:', uniqueWords);
-             
-             let processedResponse = response;
-             
-             // Create a map to track which words we've already processed to avoid duplicates
-             const processedWords = new Set();
-             
-             uniqueWords.forEach(word => {
-                 const lowerWord = word.toLowerCase();
-                 
-                 // Skip if we've already processed this word
-                 if (processedWords.has(lowerWord)) {
-                     return;
-                 }
-                 
-                 // Check if this word is not in current vocabulary
-                 if (!currentVocabulary.includes(lowerWord) && 
-                     !newWordsIntroduced.has(lowerWord)) {
-                     
-                     console.log('New word detected:', word, '->', lowerWord);
-                     console.log('  - Word length:', word.length);
-                     console.log('  - Is in vocabulary:', currentVocabulary.includes(lowerWord));
-                     console.log('  - Already introduced:', newWordsIntroduced.has(lowerWord));
-                     
-                     newWordsIntroduced.add(lowerWord);
-                     processedWords.add(lowerWord);
-                     
-                     // Get context-aware translation for this new word
-                     getContextAwareTranslation(word, response);
-                     
-                     // Highlight the word in the response with better regex handling
-                     const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                     const regex = new RegExp(`\\b${escapedWord}\\b`, 'g');
-                     processedResponse = processedResponse.replace(regex, 
-                         `<span class="new-word" data-translation="Loading translation..." data-word="${lowerWord}">${word}</span>`
-                     );
-                 } else {
-                     console.log('Word already known or processed:', word, '->', lowerWord);
-                     console.log('  - In vocabulary:', currentVocabulary.includes(lowerWord));
-                     console.log('  - Already introduced:', newWordsIntroduced.has(lowerWord));
-                 }
-             });
-             
-             console.log('New words introduced:', Array.from(newWordsIntroduced));
-             return processedResponse;
-         }
-
-         // Get context-aware translation for a new word using AI
-         async function getContextAwareTranslation(word, fullResponse) {
+                 // Function to get context-aware translation for a word
+         async function getContextAwareTranslation(word, context = '') {
              try {
-                 // Find the sentence containing this word for context
-                 const sentences = fullResponse.split(/[.!?]+/);
-                 let contextSentence = '';
-                 
-                 for (const sentence of sentences) {
-                     if (sentence.toLowerCase().includes(word.toLowerCase())) {
-                         contextSentence = sentence.trim();
-                         break;
-                     }
-                 }
-                 
-                 // Use the existing AI translation endpoint but with context
                  const response = await fetch('/api/sr/ai-translate', {
                      method: 'POST',
                      headers: {
-                         'Content-Type': 'application/json',
+                         'Content-Type': 'application/json'
                      },
-                     body: JSON.stringify({ 
+                     body: JSON.stringify({
                          word: word,
-                         context: contextSentence || fullResponse
+                         context: context
                      })
                  });
                  
-                 const data = await response.json();
-                 
-                 if (data.success) {
-                     // Store the word data
-                     newWordsData.set(word.toLowerCase(), {
-                         translation: data.translation,
-                         example: data.example,
-                         word_type: data.word_type
-                     });
-                     
-                     // Update the tooltip with the translation
-                     const wordElements = document.querySelectorAll(`.new-word[data-word="${word.toLowerCase()}"]`);
-                     wordElements.forEach(element => {
-                         if (element.getAttribute('data-translation') === 'Loading translation...') {
-                             element.setAttribute('data-translation', data.translation);
-                             element.classList.add('loaded');
-                         }
-                     });
+                 if (response.ok) {
+                     const data = await response.json();
+                     if (data.success) {
+                         return data.translation;
+                     } else {
+                         console.warn('Translation failed:', data.error);
+                         return `[${word}]`;
+                     }
+                 } else {
+                     console.error('Translation request failed');
+                     return `[${word}]`;
                  }
              } catch (error) {
-                 console.error('Error getting context-aware translation for new word:', error);
+                 console.error('Translation error:', error);
+                 return `[${word}]`;
              }
          }
+
+        // Function to process AI response and highlight new words
+        function processAIResponse(response) {
+            // Enhanced patterns to catch all Italian words including short ones
+            const patterns = [
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\w*\\b',
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\b',
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\w*\\b',
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\b',
+                '\\b[àèéìòù]\\b',
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\\b'
+            ];
+            
+            let processedResponse = response;
+            const newWordsFound = [];
+            
+            // Process each pattern
+            patterns.forEach(pattern => {
+                const regex = new RegExp(pattern, 'gi');
+                const matches = response.match(regex);
+                
+                if (matches) {
+                    matches.forEach(match => {
+                        const lowerMatch = match.toLowerCase();
+                        
+                        // Check if this word is not in current vocabulary
+                        if (!currentVocabulary.includes(lowerMatch) && 
+                            !currentVocabulary.includes(match) &&
+                            lowerMatch.length >= 2) { // Filter out single characters
+                            
+                            // Avoid duplicates
+                            if (!newWordsFound.some(w => w.word.toLowerCase() === lowerMatch)) {
+                                newWordsFound.push({
+                                    word: match,
+                                    original: match,
+                                    translation: null
+                                });
+                                
+                                // Add to newWords array for later processing
+                                if (!newWords.some(w => w.word.toLowerCase() === lowerMatch)) {
+                                    newWords.push({
+                                        word: match,
+                                        original: match,
+                                        translation: null
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Highlight new words in the response
+            newWordsFound.forEach(wordObj => {
+                const regex = new RegExp(`\\b${wordObj.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+                processedResponse = processedResponse.replace(regex, 
+                    `<span class="new-word" data-word="${wordObj.word}" style="color: red; font-weight: bold; animation: pulse 1s infinite;">${wordObj.word}</span>`
+                );
+            });
+            
+            // Fetch translations for new words
+            newWordsFound.forEach(async (wordObj) => {
+                try {
+                    const translation = await getContextAwareTranslation(wordObj.word);
+                    wordObj.translation = translation;
+                    
+                    // Update the newWords array
+                    const existingWord = newWords.find(w => w.word.toLowerCase() === wordObj.word.toLowerCase());
+                    if (existingWord) {
+                        existingWord.translation = translation;
+                    }
+                    
+                    // Update tooltip
+                    const spans = document.querySelectorAll(`[data-word="${wordObj.word}"]`);
+                    spans.forEach(span => {
+                        span.title = translation;
+                        span.style.animation = 'none'; // Stop pulsing
+                    });
+                } catch (error) {
+                    console.error('Error fetching translation for', wordObj.word, error);
+                }
+            });
+            
+            // Show "Add New Words" button if new words were found
+            if (newWordsFound.length > 0) {
+                document.getElementById('addNewWordsBtn').style.display = 'block';
+            }
+            
+            return processedResponse;
+        }
 
          // Allow Enter key to send message
          messageInput.addEventListener('keypress', (e) => {
@@ -1486,6 +1481,7 @@
 
          // Vocabulary-Aware Chat System
          let currentVocabulary = [];
+         let newWords = [];
          let newWordsIntroduced = new Set();
          let newWordsData = new Map(); // word -> {translation, example, word_type}
 
@@ -2099,6 +2095,96 @@
             } catch (error) {
                 console.error('Error searching words:', error);
             }
+        }
+
+        // Function to add all new words to vocabulary
+        async function addNewWords() {
+            if (newWords.length === 0) {
+                alert('No new words to add!');
+                return;
+            }
+
+            let addedCount = 0;
+            let failedCount = 0;
+
+            for (const wordObj of newWords) {
+                try {
+                    // Get translation and word type for this word
+                    const response = await fetch('/api/sr/ai-translate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            word: wordObj.word
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            // Add word to vocabulary
+                            const addResponse = await fetch('/api/sr/words', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    word: wordObj.word,
+                                    translation: data.translation,
+                                    example: data.example,
+                                    word_type: data.word_type,
+                                    notes: 'Added from AI conversation'
+                                })
+                            });
+
+                            if (addResponse.ok) {
+                                addedCount++;
+                                console.log(`Added word: ${wordObj.word}`);
+                            } else {
+                                failedCount++;
+                                console.error(`Failed to add word: ${wordObj.word}`);
+                            }
+                        } else {
+                            failedCount++;
+                            console.error(`Translation failed for: ${wordObj.word}`);
+                        }
+                    } else {
+                        failedCount++;
+                        console.error(`Translation request failed for: ${wordObj.word}`);
+                    }
+                } catch (error) {
+                    failedCount++;
+                    console.error(`Error processing word ${wordObj.word}:`, error);
+                }
+            }
+
+            // Show results
+            if (addedCount > 0) {
+                alert(`Successfully added ${addedCount} new words to your vocabulary!${failedCount > 0 ? `\nFailed to add ${failedCount} words.` : ''}`);
+                
+                // Clear new words and reload vocabulary
+                newWords = [];
+                document.getElementById('addNewWordsBtn').style.display = 'none';
+                
+                // Reload vocabulary to show new words
+                await loadVocabulary();
+                await loadCurrentVocabulary();
+            } else {
+                alert(`Failed to add any new words. Please try again.`);
+            }
+        }
+
+        // Function to reset conversation
+        function resetConversation() {
+            newWords = [];
+            document.getElementById('addNewWordsBtn').style.display = 'none';
+            
+            // Clear chat messages
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+            
+            console.log('Conversation reset - new words cleared');
         }
     </script>
 </body>
