@@ -1124,10 +1124,46 @@
     </div>
 
     <script>
-        const chatMessages = document.getElementById('chatMessages');
-        const chatForm = document.getElementById('chatForm');
+        // Get DOM elements
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
+        const chatMessages = document.getElementById('chatMessages');
+        const vocabularyToggle = document.getElementById('vocabularyToggle');
+        const addNewWordsBtn = document.getElementById('addNewWordsBtn');
+        const endConversationBtn = document.getElementById('endConversationBtn');
+        
+        // Check if elements exist
+        if (!messageInput || !sendButton || !chatMessages) {
+            console.error('❌ Required chat elements not found:', {
+                messageInput: !!messageInput,
+                sendButton: !!sendButton,
+                chatMessages: !!chatMessages
+            });
+            return;
+        }
+        
+        // Add event listeners
+        sendButton.addEventListener('click', () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                addMessage(message, true);
+                messageInput.value = '';
+                sendMessage(message);
+            }
+        });
+        
+        // Allow Enter key to send message
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    addMessage(message, true);
+                    messageInput.value = '';
+                    sendMessage(message);
+                }
+            }
+        });
 
                  function addMessage(content, isUser = false) {
              const messageDiv = document.createElement('div');
@@ -1217,19 +1253,7 @@
              }
          }
 
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const message = messageInput.value.trim();
-            if (!message) return;
-            
-            addMessage(message, true);
-            messageInput.value = '';
-            
-            await sendMessage(message);
-        });
-
-                 // Function to get context-aware translation for a word
+        // Function to get context-aware translation for a word
          async function getContextAwareTranslation(word, context = '') {
              try {
                  const response = await fetch('/api/sr/ai-translate', {
@@ -1345,26 +1369,18 @@
             
             // Show "Add New Words" button if new words were found
             if (newWordsFound.length > 0) {
-                document.getElementById('addNewWordsBtn').style.display = 'block';
+                const addNewWordsBtn = document.getElementById('addNewWordsBtn');
+                if (addNewWordsBtn) {
+                    addNewWordsBtn.style.display = 'block';
+                } else {
+                    console.warn('Add New Words button not found in DOM');
+                }
             }
             
             return processedResponse;
         }
 
-         // Allow Enter key to send message
-         messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const message = messageInput.value.trim();
-                if (message) {
-                    addMessage(message, true);
-                    messageInput.value = '';
-                    sendMessage(message);
-                }
-            }
-        });
-
-                 // End conversation and add new words
+         // End conversation and add new words
          document.getElementById('endConversationBtn').addEventListener('click', async () => {
              if (newWordsIntroduced.size === 0) {
                  alert('No new words to add!');
@@ -1388,7 +1404,11 @@
                  // Clear the conversation state
                  newWordsIntroduced.clear();
                  newWordsData.clear();
-                 document.getElementById('endConversationBtn').style.display = 'none';
+                 
+                 const endConversationBtn = document.getElementById('endConversationBtn');
+                 if (endConversationBtn) {
+                     endConversationBtn.style.display = 'none';
+                 }
                  
                  // Reload vocabulary for chat
                  await loadCurrentVocabulary();
@@ -1415,7 +1435,11 @@
          function resetConversation() {
              newWordsIntroduced.clear();
              newWordsData.clear();
-             document.getElementById('endConversationBtn').style.display = 'none';
+             
+             const endConversationBtn = document.getElementById('endConversationBtn');
+             if (endConversationBtn) {
+                 endConversationBtn.style.display = 'none';
+             }
              
              // Clear chat messages except the initial greeting
              const chatMessages = document.getElementById('chatMessages');
