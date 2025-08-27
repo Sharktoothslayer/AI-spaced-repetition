@@ -1395,48 +1395,90 @@
             }
         }
 
-        // Function to get context-aware translation for a word
-         async function getContextAwareTranslation(word, context = '') {
-             console.log('🔍 Starting translation for word:', word);
-             try {
-                 const requestBody = {
-                     word: word,
-                     context: context
-                 };
-                 console.log('📤 Sending translation request:', requestBody);
-                 
-                 const response = await fetch('/api/sr/ai-translate', {
-                     method: 'POST',
-                     headers: {
-                         'Content-Type': 'application/json'
-                     },
-                     body: JSON.stringify(requestBody)
-                 });
-                 
-                 console.log('📥 Translation response status:', response.status);
-                 
-                 if (response.ok) {
-                     const data = await response.json();
-                     console.log('📥 Translation response data:', data);
-                     
-                     if (data.success) {
-                         console.log('✅ Translation successful:', word, '->', data.translation);
-                         return data.translation;
-                     } else {
-                         console.warn('⚠️ Translation failed:', data.error);
-                         return `[${word}]`;
-                     }
-                 } else {
-                     console.error('❌ Translation request failed with status:', response.status);
-                     const errorText = await response.text();
-                     console.error('❌ Error response body:', errorText);
-                     return `[${word}]`;
-                 }
-             } catch (error) {
-                 console.error('💥 Translation error:', error);
-                 return `[${word}]`;
-             }
-         }
+                // Function to get AI translation for a word
+        async function getAITranslation(word, context = '') {
+            console.log('🤖 Getting AI translation for word:', word);
+            try {
+                const requestBody = {
+                    word: word,
+                    context: context
+                };
+                
+                const response = await fetch('/api/sr/ai-translate-word', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('🤖 AI translation successful:', word, '->', data.translation);
+                        return data.translation;
+                    }
+                }
+                
+                console.warn('⚠️ AI translation failed, will use Google Translate');
+                return null;
+                
+            } catch (error) {
+                console.error('💥 AI translation error:', error);
+                return null;
+            }
+        }
+
+        // Function to get context-aware translation for a word (enhanced with AI)
+        async function getContextAwareTranslation(word, context = '') {
+            console.log('🔍 Starting translation for word:', word);
+            
+            // Try AI translation first
+            const aiTranslation = await getAITranslation(word, context);
+            if (aiTranslation) {
+                return aiTranslation;
+            }
+            
+            // Fallback to Google Translate
+            try {
+                const requestBody = {
+                    word: word,
+                    context: context
+                };
+                console.log('📤 Sending Google Translate request:', requestBody);
+                
+                const response = await fetch('/api/sr/ai-translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('📥 Translation response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📥 Translation response data:', data);
+                    
+                    if (data.success) {
+                        console.log('✅ Google Translate successful:', word, '->', data.translation);
+                        return data.translation;
+                    } else {
+                        console.warn('⚠️ Google Translate failed:', data.error);
+                        return `[${word}]`;
+                    }
+                } else {
+                    console.error('❌ Translation request failed with status:', response.status);
+                    const errorText = await response.text();
+                    console.error('❌ Error response body:', errorText);
+                    return `[${word}]`;
+                }
+            } catch (error) {
+                console.error('💥 Translation error:', error);
+                return `[${word}]`;
+            }
+        }
 
         // Function to process AI response and highlight new words
         function processAIResponse(response) {
@@ -2306,7 +2348,7 @@
             }
         }
 
-        // Function to add all new words to vocabulary
+        // Function to add all new words to vocabulary with enhanced translation comparison
         async function addNewWords() {
             if (newWords.length === 0) {
                 alert('No new words to add!');
@@ -2324,53 +2366,75 @@
 
             for (const wordObj of newWords) {
                 try {
-                    // Get translation and word type for this word
-                    const response = await fetch('/api/sr/ai-translate', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            word: wordObj.word
-                        })
-                    });
+                    console.log(`🔄 Processing word: ${wordObj.word}`);
+                    
+                    // Get both AI and Google translations
+                    const aiTranslation = await getAITranslation(wordObj.word);
+                    const googleTranslation = await getGoogleTranslation(wordObj.word);
+                    
+                    let finalTranslation = aiTranslation; // Prefer AI translation
+                    let translationSource = 'AI';
+                    
+                    // Compare translations if we have both
+                    if (aiTranslation && googleTranslation && aiTranslation !== googleTranslation) {
+                        console.log(`⚠️ Translation mismatch for "${wordObj.word}":`);
+                        console.log(`  AI: "${aiTranslation}"`);
+                        console.log(`  Google: "${googleTranslation}"`);
+                        
+                        // Prompt user to choose
+                        const userChoice = await promptUserForTranslation(wordObj.word, aiTranslation, googleTranslation);
+                        if (userChoice) {
+                            finalTranslation = userChoice.translation;
+                            translationSource = userChoice.source;
+                        } else {
+                            console.log(`⏭️ User skipped word: ${wordObj.word}`);
+                            continue;
+                        }
+                    } else if (!aiTranslation && googleTranslation) {
+                        finalTranslation = googleTranslation;
+                        translationSource = 'Google Translate';
+                    } else if (!aiTranslation && !googleTranslation) {
+                        console.error(`❌ No translation available for: ${wordObj.word}`);
+                        failedCount++;
+                        continue;
+                    }
+                    
+                    console.log(`✅ Using ${translationSource} translation: ${wordObj.word} -> ${finalTranslation}`);
+                    
+                    // Get word type and example from Google Translate (more reliable for this)
+                    const wordData = await getWordData(wordObj.word);
+                    
+                    if (wordData) {
+                        // Add word to vocabulary
+                        const addResponse = await fetch('/api/sr/words', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                word: wordObj.word,
+                                translation: finalTranslation,
+                                example: wordData.example,
+                                word_type: wordData.word_type,
+                                notes: `Added from AI conversation (${translationSource})`
+                            })
+                        });
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success) {
-                            // Add word to vocabulary
-                            const addResponse = await fetch('/api/sr/words', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    word: wordObj.word,
-                                    translation: data.translation,
-                                    example: data.example,
-                                    word_type: data.word_type,
-                                    notes: 'Added from AI conversation'
-                                })
-                            });
-
-                            if (addResponse.ok) {
-                                addedCount++;
-                                console.log(`Added word: ${wordObj.word}`);
-                            } else {
-                                failedCount++;
-                                console.error(`Failed to add word: ${wordObj.word}`);
-                            }
+                        if (addResponse.ok) {
+                            addedCount++;
+                            console.log(`✅ Added word: ${wordObj.word}`);
                         } else {
                             failedCount++;
-                            console.error(`Translation failed for: ${wordObj.word}`);
+                            console.error(`❌ Failed to add word: ${wordObj.word}`);
                         }
                     } else {
                         failedCount++;
-                        console.error(`Translation request failed for: ${wordObj.word}`);
+                        console.error(`❌ Failed to get word data for: ${wordObj.word}`);
                     }
+                    
                 } catch (error) {
                     failedCount++;
-                    console.error(`Error processing word ${wordObj.word}:`, error);
+                    console.error(`💥 Error processing word ${wordObj.word}:`, error);
                 }
             }
 
@@ -2400,6 +2464,82 @@
             // Restore button state
             addNewWordsBtn.disabled = false;
             addNewWordsBtn.innerHTML = originalText;
+        }
+
+        // Function to get Google Translate data (word type, example, etc.)
+        async function getWordData(word) {
+            try {
+                const response = await fetch('/api/sr/ai-translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ word: word })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return {
+                            translation: data.translation,
+                            example: data.example,
+                            word_type: data.word_type
+                        };
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('💥 Error getting word data:', error);
+                return null;
+            }
+        }
+
+        // Function to get Google Translate only
+        async function getGoogleTranslation(word) {
+            try {
+                const response = await fetch('/api/sr/ai-translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ word: word })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        return data.translation;
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('💥 Error getting Google translation:', error);
+                return null;
+            }
+        }
+
+        // Function to prompt user for translation choice
+        async function promptUserForTranslation(word, aiTranslation, googleTranslation) {
+            return new Promise((resolve) => {
+                const message = `Translation mismatch for "${word}":\n\n` +
+                              `🤖 AI: "${aiTranslation}"\n` +
+                              `🌐 Google: "${googleTranslation}"\n\n` +
+                              `Which translation would you like to use?`;
+                
+                const choice = confirm(message + '\n\nClick OK for AI, Cancel for Google');
+                
+                if (choice) {
+                    resolve({
+                        translation: aiTranslation,
+                        source: 'AI (User Choice)'
+                    });
+                } else {
+                    resolve({
+                        translation: googleTranslation,
+                        source: 'Google Translate (User Choice)'
+                    });
+                }
+            });
         }
 
         // Function to end conversation and add new words

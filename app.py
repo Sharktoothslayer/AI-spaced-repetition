@@ -18,6 +18,57 @@ sr_system = SpacedRepetition()
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
 DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
 
+def get_ai_translation(word, context=""):
+    """Get AI-powered translation for a word using Ollama"""
+    try:
+        print(f"🤖 Getting AI translation for: {word}")
+        
+        # Create a simple prompt for the AI to translate
+        prompt = f"""Traduci questa parola italiana in inglese: "{word}"
+        
+        Se hai bisogno di contesto, ecco il contesto: {context if context else 'Nessun contesto specifico'}
+        
+        Fornisci SOLO la traduzione in inglese, nient'altro. Sii preciso e accurato."""
+        
+        ai_request = {
+            'model': DEFAULT_MODEL,
+            'messages': [
+                {
+                    'role': 'system',
+                    'content': 'Sei un traduttore esperto italiano-inglese. Traduci solo la parola richiesta, nient\'altro.'
+                },
+                {
+                    'role': 'user',
+                    'content': prompt
+                }
+            ],
+            'stream': False
+        }
+        
+        print(f"🤖 Sending AI translation request")
+        response = requests.post(
+            f'{OLLAMA_BASE_URL}/api/chat',
+            json=ai_request,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            ai_response = response.json()
+            ai_translation = ai_response.get('message', {}).get('content', '').strip()
+            
+            # Clean up AI response (remove quotes, extra text, etc.)
+            ai_translation = ai_translation.replace('"', '').replace("'", "").strip()
+            
+            print(f"🤖 AI translation: {word} -> {ai_translation}")
+            return ai_translation
+        else:
+            print(f"❌ AI translation failed: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"💥 AI translation error: {str(e)}")
+        return None
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -212,6 +263,38 @@ def ai_translate():
             
     except Exception as e:
         print(f"💥 Server error in ai_translate: {str(e)}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/sr/ai-translate-word', methods=['POST'])
+def ai_translate_word():
+    """Get AI-powered translation for a word"""
+    try:
+        data = request.get_json()
+        word = data.get('word', '').strip()
+        context = data.get('context', '').strip()
+        
+        if not word:
+            return jsonify({'error': 'Word is required'}), 400
+        
+        print(f"🤖 AI translation request for: {word}")
+        
+        # Get AI translation
+        ai_translation = get_ai_translation(word, context)
+        
+        if ai_translation:
+            return jsonify({
+                'translation': ai_translation,
+                'source': 'ai',
+                'success': True
+            })
+        else:
+            return jsonify({
+                'error': 'AI translation failed',
+                'success': False
+            }), 500
+            
+    except Exception as e:
+        print(f"💥 Server error in ai_translate_word: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/sr/words/<word_id>', methods=['DELETE'])
