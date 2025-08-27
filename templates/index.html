@@ -688,11 +688,7 @@
         }
 
         .review-card {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -700,17 +696,9 @@
             background: #f8f9fa;
         }
 
-        .card-front, .card-back {
-            background: white;
-            border-radius: 12px;
-            padding: 40px;
+        .word-display {
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            max-width: 500px;
-            width: 100%;
-            border: 1px solid #e9ecef;
-            position: relative;
-            z-index: 1;
+            margin-bottom: 40px;
         }
 
         .card-content {
@@ -775,7 +763,8 @@
         }
 
         .answer-section {
-            margin-bottom: 32px;
+            margin-top: 40px;
+            text-align: center;
         }
 
         .translation-section {
@@ -921,11 +910,7 @@
         }
 
         .no-reviews {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1406,56 +1391,53 @@
                         </div>
                     </div>
                     
-                    <div class="review-card" id="reviewCard" style="display: none;">
-                        <div class="card-front">
-                            <div class="card-content">
-                                <div class="word-display">
-                                    <h2 id="reviewWord">Word</h2>
-                                    <div class="word-type-badge" id="wordTypeBadge" style="display: none;">
-                                        <span id="reviewWordType">noun</span>
-                                    </div>
-                                </div>
-                                <button class="show-answer-btn" id="showAnswerBtn">
-                                    <span class="btn-icon">👁️</span>
-                                    <span class="btn-text">Show Answer</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-back" id="cardBack" style="display: none;">
-                            <div class="answer-section">
-                                <div class="translation-section">
-                                    <h3>Translation</h3>
-                                    <p id="reviewTranslation">Translation</p>
-                                </div>
-                                <div class="example-section" id="exampleSection" style="display: none;">
-                                    <h4>Example</h4>
-                                    <p id="reviewExample">Example</p>
-                                </div>
-                            </div>
-                            <div class="quality-buttons">
-                                <button class="quality-btn again" data-quality="0">
-                                    <span class="btn-icon">😞</span>
-                                    <span class="btn-label">Again</span>
-                                    <span class="btn-preview" id="preview-0"></span>
-                                </button>
-                                <button class="quality-btn hard" data-quality="1">
-                                    <span class="btn-icon">😐</span>
-                                    <span class="btn-label">Hard</span>
-                                    <span class="btn-preview" id="preview-1"></span>
-                                </button>
-                                <button class="quality-btn good" data-quality="2">
-                                    <span class="btn-icon">🙂</span>
-                                    <span class="btn-label">Good</span>
-                                    <span class="btn-preview" id="preview-2"></span>
-                                </button>
-                                <button class="quality-btn easy" data-quality="3">
-                                    <span class="btn-icon">😊</span>
-                                    <span class="btn-label">Easy</span>
-                                    <span class="btn-preview" id="preview-3"></span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                                         <div class="review-card" id="reviewCard" style="display: none;">
+                         <div class="word-display">
+                             <h2 id="reviewWord">Word</h2>
+                             <div class="word-type-badge" id="wordTypeBadge" style="display: none;">
+                                 <span id="reviewWordType">noun</span>
+                             </div>
+                         </div>
+                         
+                         <button class="show-answer-btn" id="showAnswerBtn">
+                             <span class="btn-icon">👁️</span>
+                             <span class="btn-text">Show Answer</span>
+                         </button>
+                         
+                         <div class="answer-section" id="answerSection" style="display: none;">
+                             <div class="translation-section">
+                                 <h3>Translation</h3>
+                                 <p id="reviewTranslation">Translation</p>
+                             </div>
+                             <div class="example-section" id="exampleSection" style="display: none;">
+                                 <h4>Example</h4>
+                                 <p id="reviewExample">Example</p>
+                             </div>
+                             
+                             <div class="quality-buttons">
+                                 <button class="quality-btn again" data-quality="0">
+                                     <span class="btn-icon">😞</span>
+                                     <span class="btn-label">Again</span>
+                                     <span class="btn-preview" id="preview-0"></span>
+                                 </button>
+                                 <button class="quality-btn hard" data-quality="1">
+                                     <span class="btn-icon">😐</span>
+                                     <span class="btn-label">Hard</span>
+                                     <span class="btn-preview" id="preview-2"></span>
+                                 </button>
+                                 <button class="quality-btn good" data-quality="2">
+                                     <span class="btn-icon">🙂</span>
+                                     <span class="btn-label">Good</span>
+                                     <span class="btn-preview" id="preview-2"></span>
+                                 </button>
+                                 <button class="quality-btn easy" data-quality="3">
+                                     <span class="btn-icon">😊</span>
+                                     <span class="btn-label">Easy</span>
+                                     <span class="btn-preview" id="preview-3"></span>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
                     
                     <div class="no-reviews" id="noReviews">
                         <div class="no-reviews-content">
@@ -2229,31 +2211,31 @@
             }
         }
 
-        function startReview() {
-            currentReviewWord = reviewWords[0];
-            console.log('Starting review for word:', currentReviewWord);
-            
-            document.getElementById('reviewCard').style.display = 'block';
-            document.getElementById('noReviews').style.display = 'none';
-            
-            document.getElementById('reviewWord').textContent = currentReviewWord.word;
-            document.getElementById('cardBack').style.display = 'none';
-            document.getElementById('showAnswerBtn').style.display = 'flex';
-            
-            // Show word type badge if available
-            const wordTypeBadge = document.getElementById('wordTypeBadge');
-            const reviewWordType = document.getElementById('reviewWordType');
-            if (currentReviewWord.word_type) {
-                reviewWordType.textContent = currentReviewWord.word_type;
-                wordTypeBadge.style.display = 'block';
-            } else {
-                wordTypeBadge.style.display = 'none';
-            }
-            
-            console.log('Review card displayed, loading preview...');
-            // Load preview for this word
-            loadReviewPreview(currentReviewWord.id);
-        }
+                 function startReview() {
+             currentReviewWord = reviewWords[0];
+             console.log('Starting review for word:', currentReviewWord);
+             
+             document.getElementById('reviewCard').style.display = 'block';
+             document.getElementById('noReviews').style.display = 'none';
+             
+             document.getElementById('reviewWord').textContent = currentReviewWord.word;
+             document.getElementById('answerSection').style.display = 'none';
+             document.getElementById('showAnswerBtn').style.display = 'flex';
+             
+             // Show word type badge if available
+             const wordTypeBadge = document.getElementById('wordTypeBadge');
+             const reviewWordType = document.getElementById('reviewWordType');
+             if (currentReviewWord.word_type) {
+                 reviewWordType.textContent = currentReviewWord.word_type;
+                 wordTypeBadge.style.display = 'block';
+             } else {
+                 wordTypeBadge.style.display = 'none';
+             }
+             
+             console.log('Review card displayed, loading preview...');
+             // Load preview for this word
+             loadReviewPreview(currentReviewWord.id);
+         }
 
         async function loadReviewPreview(wordId) {
             try {
@@ -2296,20 +2278,20 @@
             document.getElementById('noReviews').style.display = 'block';
         }
 
-        document.getElementById('showAnswerBtn').addEventListener('click', () => {
-            document.getElementById('cardBack').style.display = 'block';
-            document.getElementById('reviewTranslation').textContent = currentReviewWord.translation;
-            
-            if (currentReviewWord.example) {
-                document.getElementById('exampleSection').style.display = 'block';
-                document.getElementById('reviewExample').textContent = currentReviewWord.example;
-            } else {
-                document.getElementById('exampleSection').style.display = 'none';
-            }
-            
-            // Hide the show answer button
-            document.getElementById('showAnswerBtn').style.display = 'none';
-        });
+                 document.getElementById('showAnswerBtn').addEventListener('click', () => {
+             document.getElementById('answerSection').style.display = 'block';
+             document.getElementById('reviewTranslation').textContent = currentReviewWord.translation;
+             
+             if (currentReviewWord.example) {
+                 document.getElementById('exampleSection').style.display = 'block';
+                 document.getElementById('reviewExample').textContent = currentReviewWord.example;
+             } else {
+                 document.getElementById('exampleSection').style.display = 'none';
+             }
+             
+             // Hide the show answer button
+             document.getElementById('showAnswerBtn').style.display = 'none';
+         });
 
         // Quality buttons
         document.querySelectorAll('.quality-btn').forEach(btn => {
