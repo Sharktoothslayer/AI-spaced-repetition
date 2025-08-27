@@ -621,8 +621,8 @@
         /* Review Styles */
         .review-container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             width: 100%;
             height: 80vh;
             display: flex;
@@ -631,19 +631,59 @@
         }
 
         .review-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 20px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .review-stats {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 20px;
-            border-radius: 20px;
+        .review-header-left h1 {
+            margin: 0 0 4px 0;
+            font-size: 24px;
             font-weight: 600;
+            color: #212529;
+        }
+
+        .review-progress {
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .review-header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .review-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 18px;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
         .review-card {
@@ -652,65 +692,206 @@
             align-items: center;
             justify-content: center;
             padding: 40px;
+            background: #f8f9fa;
         }
 
         .card-front, .card-back {
-            background: #f8f9fa;
-            border-radius: 20px;
+            background: white;
+            border-radius: 12px;
             padding: 40px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
             max-width: 500px;
             width: 100%;
+            border: 1px solid #e9ecef;
+        }
+
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .word-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .word-display h2 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 700;
+            color: #212529;
+            letter-spacing: -0.5px;
+        }
+
+        .word-type-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .show-answer-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #007bff;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
+            padding: 16px 32px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            margin-top: 20px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .show-answer-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            font-size: 18px;
+        }
+
+        .btn-text {
+            font-size: 16px;
+        }
+
+        .answer-section {
+            margin-bottom: 32px;
+        }
+
+        .translation-section {
+            margin-bottom: 24px;
+        }
+
+        .translation-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .translation-section p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #212529;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .example-section h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .example-section p {
+            margin: 0;
+            font-size: 16px;
+            color: #495057;
+            font-style: italic;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
         }
 
         .quality-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 30px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .review-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            
+            .review-stats {
+                gap: 12px;
+            }
+            
+            .card-front, .card-back {
+                padding: 24px;
+                margin: 0 16px;
+            }
+            
+            .word-display h2 {
+                font-size: 28px;
+            }
+            
+            .quality-buttons {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .quality-btn {
+                min-height: 60px;
+                padding: 12px 8px;
+            }
         }
 
         .quality-btn {
             background: #6c757d;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 16px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-height: 80px;
+            justify-content: center;
+            border: 2px solid transparent;
         }
 
         .quality-btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        .quality-btn[data-quality="0"] { background: #dc3545; }
-        .quality-btn[data-quality="1"] { background: #fd7e14; }
-        .quality-btn[data-quality="2"] { background: #ffc107; }
-        .quality-btn[data-quality="3"] { background: #28a745; }
-
-        .quality-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            min-height: 60px;
-            justify-content: center;
+        .quality-btn.again { 
+            background: #dc3545; 
+            border-color: #c82333;
+        }
+        .quality-btn.hard { 
+            background: #fd7e14; 
+            border-color: #e55a00;
+        }
+        .quality-btn.good { 
+            background: #28a745; 
+            border-color: #1e7e34;
+        }
+        .quality-btn.easy { 
+            background: #17a2b8; 
+            border-color: #117a8b;
         }
 
         .btn-label {
@@ -720,20 +901,45 @@
 
         .btn-preview {
             font-size: 11px;
-            opacity: 0.9;
-            font-weight: 400;
-            text-align: center;
-            line-height: 1.2;
+            opacity: 0.8;
+            font-weight: 500;
         }
 
         .no-reviews {
             flex: 1;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            background: #f8f9fa;
+        }
+
+        .no-reviews-content {
             text-align: center;
-            color: #666;
+            padding: 40px;
+        }
+
+        .no-reviews-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .no-reviews h3 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .no-reviews p {
+            margin: 0 0 4px 0;
+            color: #6c757d;
+            font-size: 16px;
+        }
+
+        .no-reviews .subtitle {
+            font-size: 14px;
+            color: #adb5bd;
+            margin-top: 8px;
         }
 
         /* Stats Styles - New Design */
@@ -1161,40 +1367,70 @@
             <div class="tab-content" id="review-tab">
                 <div class="review-container">
                     <div class="review-header">
-                        <h1>Review Words</h1>
-                        <div class="review-stats">
-                            <span id="dueCount">0</span> words due
-                            <button id="refreshReviewBtn" class="refresh-btn" style="margin-left: 15px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 Refresh</button>
-                            <button id="debugReviewBtn" class="debug-btn" style="margin-left: 10px; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">🐛 Debug</button>
+                        <div class="review-header-left">
+                            <h1>Review</h1>
+                            <div class="review-progress">
+                                <span id="dueCount">0</span> words due for review
+                            </div>
+                        </div>
+                        <div class="review-header-right">
+                            <div class="review-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number" id="totalWords">0</span>
+                                    <span class="stat-label">Total</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="accuracyRate">0%</span>
+                                    <span class="stat-label">Accuracy</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="review-card" id="reviewCard" style="display: none;">
                         <div class="card-front">
-                            <h2 id="reviewWord">Word</h2>
-                            <button class="show-answer-btn" id="showAnswerBtn">Show Answer</button>
+                            <div class="card-content">
+                                <div class="word-display">
+                                    <h2 id="reviewWord">Word</h2>
+                                    <div class="word-type-badge" id="wordTypeBadge" style="display: none;">
+                                        <span id="reviewWordType">noun</span>
+                                    </div>
+                                </div>
+                                <button class="show-answer-btn" id="showAnswerBtn">
+                                    <span class="btn-icon">👁️</span>
+                                    <span class="btn-text">Show Answer</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="card-back" id="cardBack" style="display: none;">
-                            <h3>Translation</h3>
-                            <p id="reviewTranslation">Translation</p>
-                            <div class="example-section" id="exampleSection" style="display: none;">
-                                <h4>Example</h4>
-                                <p id="reviewExample">Example</p>
+                            <div class="answer-section">
+                                <div class="translation-section">
+                                    <h3>Translation</h3>
+                                    <p id="reviewTranslation">Translation</p>
+                                </div>
+                                <div class="example-section" id="exampleSection" style="display: none;">
+                                    <h4>Example</h4>
+                                    <p id="reviewExample">Example</p>
+                                </div>
                             </div>
                             <div class="quality-buttons">
-                                <button class="quality-btn" data-quality="0">
+                                <button class="quality-btn again" data-quality="0">
+                                    <span class="btn-icon">😞</span>
                                     <span class="btn-label">Again</span>
                                     <span class="btn-preview" id="preview-0"></span>
                                 </button>
-                                <button class="quality-btn" data-quality="1">
+                                <button class="quality-btn hard" data-quality="1">
+                                    <span class="btn-icon">😐</span>
                                     <span class="btn-label">Hard</span>
                                     <span class="btn-preview" id="preview-1"></span>
                                 </button>
-                                <button class="quality-btn" data-quality="2">
+                                <button class="quality-btn good" data-quality="2">
+                                    <span class="btn-icon">🙂</span>
                                     <span class="btn-label">Good</span>
                                     <span class="btn-preview" id="preview-2"></span>
                                 </button>
-                                <button class="quality-btn" data-quality="3">
+                                <button class="quality-btn easy" data-quality="3">
+                                    <span class="btn-icon">😊</span>
                                     <span class="btn-label">Easy</span>
                                     <span class="btn-preview" id="preview-3"></span>
                                 </button>
@@ -1203,8 +1439,12 @@
                     </div>
                     
                     <div class="no-reviews" id="noReviews">
-                        <p>No words due for review! 🎉</p>
-                        <p>Add some words to get started.</p>
+                        <div class="no-reviews-content">
+                            <div class="no-reviews-icon">🎉</div>
+                            <h3>No words due for review!</h3>
+                            <p>Great job! You're all caught up.</p>
+                            <p class="subtitle">Add some new words to continue learning.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1490,25 +1730,38 @@
                 }
             }
             
-            // Enhanced patterns to catch all Italian words including short ones
+            // Enhanced patterns to catch all Italian words including short ones and accented characters
             const patterns = [
+                // Full words with accents - comprehensive character set
                 '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\w*\\b',
+                // Single characters including all accented ones
                 '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\b',
+                // Words with apostrophes (like "dell'acqua")
                 '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\w*\\b',
+                // Two-character combinations
                 '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\\b',
+                // Standalone accented characters
                 '\\b[àèéìòù]\\b',
-                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\\b'
+                // Very short words (1-2 chars)
+                '\\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\\b',
+                // Special pattern for words ending with accented characters
+                '\\b\\w*[àèéìòù]\\b',
+                // Pattern for words starting with accented characters
+                '\\b[àèéìòù]\\w*\\b',
+                // Catch any word that contains accented characters (fallback)
+                '\\b\\w*[àèéìòù]\\w*\\b'
             ];
             
             let processedResponse = response;
             const newWordsFound = [];
             
             // Process each pattern
-            patterns.forEach(pattern => {
+            patterns.forEach((pattern, index) => {
                 const regex = new RegExp(pattern, 'gi');
                 const matches = processedResponse.match(regex);
                 
                 if (matches) {
+                    console.log(`🔍 Pattern ${index + 1} (${pattern}): Found matches:`, matches);
                     matches.forEach(match => {
                         const lowerMatch = match.toLowerCase();
                         
@@ -1518,6 +1771,7 @@
                         )) {
                             // Check if we haven't already found this word
                             if (!newWordsFound.some(w => w.word.toLowerCase() === lowerMatch)) {
+                                console.log(`✨ New word detected: "${match}" (pattern ${index + 1})`);
                                 newWordsFound.push({
                                     word: match,
                                     original: match,
@@ -1537,6 +1791,8 @@
                     });
                 }
             });
+            
+            console.log(`🎯 Total new words found: ${newWordsFound.length}`, newWordsFound.map(w => w.word));
             
             // Highlight new words in the response (red text instead of red bubbles)
             newWordsFound.forEach(wordObj => {
@@ -1923,6 +2179,9 @@
                     console.log('Review words loaded:', reviewWords);
                     document.getElementById('dueCount').textContent = reviewWords.length;
                     
+                    // Load stats for the header
+                    await loadReviewStats();
+                    
                     if (reviewWords.length > 0) {
                         console.log('Starting review with word:', reviewWords[0]);
                         startReview();
@@ -1938,6 +2197,19 @@
             }
         }
 
+        async function loadReviewStats() {
+            try {
+                const response = await fetch('/api/sr/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalWords').textContent = stats.total_words || 0;
+                    document.getElementById('accuracyRate').textContent = (stats.accuracy || 0) + '%';
+                }
+            } catch (error) {
+                console.error('Error loading review stats:', error);
+            }
+        }
+
         function startReview() {
             currentReviewWord = reviewWords[0];
             console.log('Starting review for word:', currentReviewWord);
@@ -1947,6 +2219,17 @@
             
             document.getElementById('reviewWord').textContent = currentReviewWord.word;
             document.getElementById('cardBack').style.display = 'none';
+            document.getElementById('showAnswerBtn').style.display = 'flex';
+            
+            // Show word type badge if available
+            const wordTypeBadge = document.getElementById('wordTypeBadge');
+            const reviewWordType = document.getElementById('reviewWordType');
+            if (currentReviewWord.word_type) {
+                reviewWordType.textContent = currentReviewWord.word_type;
+                wordTypeBadge.style.display = 'block';
+            } else {
+                wordTypeBadge.style.display = 'none';
+            }
             
             console.log('Review card displayed, loading preview...');
             // Load preview for this word
@@ -2004,6 +2287,9 @@
             } else {
                 document.getElementById('exampleSection').style.display = 'none';
             }
+            
+            // Hide the show answer button
+            document.getElementById('showAnswerBtn').style.display = 'none';
         });
 
         // Quality buttons
@@ -2014,54 +2300,7 @@
             });
         });
 
-        // Refresh review button
-        document.getElementById('refreshReviewBtn').addEventListener('click', () => {
-            console.log('Manual refresh requested');
-            loadReview();
-        });
 
-        // Debug review button
-        document.getElementById('debugReviewBtn').addEventListener('click', () => {
-            console.log('Debug requested');
-            debugDueWords();
-        });
-
-        // Debug function to check due words
-        async function debugDueWords() {
-            try {
-                console.log('=== DEBUG: Checking due words ===');
-                const response = await fetch('/api/sr/due');
-                const data = await response.json();
-                console.log('Due words response:', data);
-                
-                if (data.words && data.words.length > 0) {
-                    console.log('Due words found:', data.words.length);
-                    data.words.forEach((word, index) => {
-                        console.log(`Word ${index + 1}:`, {
-                            id: word.id,
-                            word: word.word,
-                            translation: word.translation,
-                            next_review: word.next_review,
-                            time_until_seconds: word.time_until_seconds,
-                            human_readable: word.human_readable,
-                            is_overdue: word.is_overdue
-                        });
-                    });
-                } else {
-                    console.log('No due words found');
-                }
-                
-                // Also check all words
-                const allResponse = await fetch('/api/sr/words');
-                const allData = await allResponse.json();
-                console.log('All words:', allData.words.length);
-                allData.words.forEach(word => {
-                    console.log(`Word: ${word.word}, Next Review: ${word.next_review}`);
-                });
-            } catch (error) {
-                console.error('Debug error:', error);
-            }
-        }
 
         async function reviewWord(quality) {
             try {

@@ -461,21 +461,36 @@ Regole semplici:
                 
                 # Enhanced word detection patterns (same as frontend)
                 patterns = [
+                    # Full words with accents - comprehensive character set
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    # Single characters including all accented ones
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    # Words with apostrophes (like "dell'acqua")
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\'[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\w*\b',
+                    # Two-character combinations
                     r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz][aàbcdeèéfghiìjklmnoòpqrstuùvxyz]\b',
+                    # Standalone accented characters
                     r'\b[àèéìòù]\b',
-                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b'
+                    # Very short words (1-2 chars)
+                    r'\b[aàbcdeèéfghiìjklmnoòpqrstuùvxyz]{1,2}\b',
+                    # Special pattern for words ending with accented characters
+                    r'\b\w*[àèéìòù]\b',
+                    # Pattern for words starting with accented characters
+                    r'\b[àèéìòù]\w*\b',
+                    # Catch any word that contains accented characters (fallback)
+                    r'\b\w*[àèéìòù]\w*\b'
                 ]
                 
                 words_in_response = []
-                for pattern in patterns:
+                for i, pattern in enumerate(patterns):
                     matches = re.findall(pattern, initial_response.lower())
+                    if matches:
+                        print(f"🔍 Pattern {i + 1}: Found matches: {matches}")
                     words_in_response.extend(matches)
                 
                 # Remove duplicates and filter out very short words that might be false positives
                 words_in_response = list(set([w for w in words_in_response if len(w) >= 2]))
+                print(f"🎯 Total words detected: {len(words_in_response)}", words_in_response)
                 
                 if mode == 'strict':
                     # Check for unauthorized words
