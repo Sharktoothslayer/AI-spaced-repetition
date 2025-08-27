@@ -747,6 +747,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            margin: 0 auto;
         }
 
         .show-answer-btn:hover {
@@ -1414,28 +1415,28 @@
                                  <p id="reviewExample">Example</p>
                              </div>
                              
-                             <div class="quality-buttons">
-                                 <button class="quality-btn again" data-quality="0">
-                                     <span class="btn-icon">😞</span>
-                                     <span class="btn-label">Again</span>
-                                     <span class="btn-preview" id="preview-0"></span>
-                                 </button>
-                                 <button class="quality-btn hard" data-quality="1">
-                                     <span class="btn-icon">😐</span>
-                                     <span class="btn-label">Hard</span>
-                                     <span class="btn-preview" id="preview-2"></span>
-                                 </button>
-                                 <button class="quality-btn good" data-quality="2">
-                                     <span class="btn-icon">🙂</span>
-                                     <span class="btn-label">Good</span>
-                                     <span class="btn-preview" id="preview-2"></span>
-                                 </button>
-                                 <button class="quality-btn easy" data-quality="3">
-                                     <span class="btn-icon">😊</span>
-                                     <span class="btn-label">Easy</span>
-                                     <span class="btn-preview" id="preview-3"></span>
-                                 </button>
-                             </div>
+                                                           <div class="quality-buttons">
+                                  <button class="quality-btn again" data-quality="0">
+                                      <span class="btn-icon">😞</span>
+                                      <span class="btn-label">Again</span>
+                                      <span class="btn-preview" id="preview-0"></span>
+                                  </button>
+                                  <button class="quality-btn hard" data-quality="1">
+                                      <span class="btn-icon">😐</span>
+                                      <span class="btn-label">Hard</span>
+                                      <span class="btn-preview" id="preview-1"></span>
+                                  </button>
+                                  <button class="quality-btn good" data-quality="2">
+                                      <span class="btn-icon">🙂</span>
+                                      <span class="btn-label">Good</span>
+                                      <span class="btn-preview" id="preview-2"></span>
+                                  </button>
+                                  <button class="quality-btn easy" data-quality="3">
+                                      <span class="btn-icon">😊</span>
+                                      <span class="btn-label">Easy</span>
+                                      <span class="btn-preview" id="preview-3"></span>
+                                  </button>
+                              </div>
                          </div>
                      </div>
                     
@@ -2249,29 +2250,47 @@
             }
         }
 
-        function displayReviewPreview(preview) {
-            // Clear previous previews
-            for (let i = 0; i < 4; i++) {
-                const previewElement = document.getElementById(`preview-${i}`);
-                if (previewElement) {
-                    previewElement.textContent = '';
-                }
-            }
-            
-            // Display previews for each quality level
-            if (preview['Again (0)']) {
-                document.getElementById('preview-0').textContent = preview['Again (0)'].human_readable;
-            }
-            if (preview['Again (1)']) {
-                document.getElementById('preview-1').textContent = preview['Again (1)'].human_readable;
-            }
-            if (preview['Hard (2)']) {
-                document.getElementById('preview-2').textContent = preview['Hard (2)'].human_readable;
-            }
-            if (preview['Good (3)']) {
-                document.getElementById('preview-3').textContent = preview['Good (3)'].human_readable;
-            }
-        }
+                 function displayReviewPreview(preview) {
+             console.log('Displaying review preview:', preview);
+             
+             // Clear previous previews
+             for (let i = 0; i < 4; i++) {
+                 const previewElement = document.getElementById(`preview-${i}`);
+                 if (previewElement) {
+                     previewElement.textContent = '';
+                 }
+             }
+             
+             // Display previews for each quality level
+             if (preview['Again (0)']) {
+                 const element = document.getElementById('preview-0');
+                 if (element) {
+                     element.textContent = preview['Again (0)'].human_readable;
+                     console.log('Set preview-0:', preview['Again (0)'].human_readable);
+                 }
+             }
+             if (preview['Hard (1)']) {
+                 const element = document.getElementById('preview-1');
+                 if (element) {
+                     element.textContent = preview['Hard (1)'].human_readable;
+                     console.log('Set preview-1:', preview['Hard (1)'].human_readable);
+                 }
+             }
+             if (preview['Good (2)']) {
+                 const element = document.getElementById('preview-2');
+                 if (element) {
+                     element.textContent = preview['Good (2)'].human_readable;
+                     console.log('Set preview-2:', preview['Good (2)'].human_readable);
+                 }
+             }
+             if (preview['Easy (3)']) {
+                 const element = document.getElementById('preview-3');
+                 if (element) {
+                     element.textContent = preview['Easy (3)'].human_readable;
+                     console.log('Set preview-3:', preview['Easy (3)'].human_readable);
+                 }
+             }
+         }
 
         function showNoReviews() {
             document.getElementById('reviewCard').style.display = 'none';
