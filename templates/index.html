@@ -628,6 +628,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative;
         }
 
         .review-header {
@@ -687,13 +688,16 @@
         }
 
         .review-card {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 40px;
             background: #f8f9fa;
-            position: relative;
         }
 
         .card-front, .card-back {
@@ -917,7 +921,11 @@
         }
 
         .no-reviews {
-            flex: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
