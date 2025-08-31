@@ -16,7 +16,7 @@ sr_system = SpacedRepetition()
 
 # Ollama configuration
 OLLAMA_BASE_URL = os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
-DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2')
+DEFAULT_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:3b-instruct-q4_K_M')
 
 def get_ai_translation(word, context=""):
     """Get AI-powered translation for a word using Ollama"""
@@ -33,24 +33,18 @@ def get_ai_translation(word, context=""):
         ai_request = {
             'model': DEFAULT_MODEL,
             'messages': [
-                {
-                    'role': 'system',
-                    'content': 'Sei un traduttore esperto italiano-inglese. Traduci solo la parola richiesta, nient\'altro.'
-                },
-                {
-                    'role': 'user',
-                    'content': prompt
-                }
+                {'role': 'system', 'content': "Sei un traduttore esperto italiano-inglese. Traduci solo la parola richiesta, nient'altro."},
+                {'role': 'user', 'content': prompt}
             ],
+            'options': {
+                'num_ctx': 2048,
+                'num_thread': 10,
+                'num_predict': 32  # single-word + tiny overhead
+            },
             'stream': False
         }
-        
-        print(f"🤖 Sending AI translation request")
-        response = requests.post(
-            f'{OLLAMA_BASE_URL}/api/chat',
-            json=ai_request,
-            timeout=30
-        )
+        response = requests.post(f'{OLLAMA_BASE_URL}/api/chat', json=ai_request, timeout=90)
+
         
         if response.status_code == 200:
             ai_response = response.json()
@@ -509,6 +503,7 @@ Regole semplici:
                                     {'role': 'system', 'content': system_content},
                                     {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
                                 ],
+                                'options': { 'num_ctx': 2048, 'num_thread': 10, 'num_predict': 64, 'stop': ['\n\n', '\n- '] },
                                 'stream': False
                             }
                             
@@ -550,6 +545,7 @@ Regole semplici:
                                     {'role': 'system', 'content': system_content},
                                     {'role': 'user', 'content': f"{message}\n\n{stronger_prompt}"}
                                 ],
+                                'options': { 'num_ctx': 2048, 'num_thread': 10, 'num_predict': 64, 'stop': ['\n\n', '\n- '] },
                                 'stream': False
                             }
                             
@@ -580,27 +576,19 @@ Regole semplici:
         ollama_request = {
             'model': DEFAULT_MODEL,
             'messages': [
-                {
-                    'role': 'system',
-                    'content': system_content
-                },
-                {
-                    'role': 'user',
-                    'content': f"{message}\n\n{'⚠️ Usa SOLO parole dal vocabolario!' if strict_mode else '⚠️ Massimo 5 nuove parole per risposta'}"
-                }
+                {'role': 'system', 'content': system_content},
+                {'role': 'user', 'content': f"{message}\n\n{'⚠️ Usa SOLO parole dal vocabolario!' if strict_mode else '⚠️ Massimo 5 nuove parole per risposta'}"}
             ],
+            'options': {
+                'num_ctx': 2048,
+                'num_thread': 10,
+                'num_predict': 64,         # keep replies concise/snappy
+                'stop': ['\n\n', '\n- '],  # stop early if model starts listing/explaining
+            },
             'stream': False
         }
-        
-        print(f"Ollama request: {ollama_request}")
-        print(f"Attempting to connect to Ollama at: {OLLAMA_BASE_URL}")
-        
-        # Send request to Ollama
-        response = requests.post(
-            f'{OLLAMA_BASE_URL}/api/chat',
-            json=ollama_request,
-            timeout=30
-        )
+        response = requests.post(f'{OLLAMA_BASE_URL}/api/chat', json=ollama_request, timeout=90)
+
         
         print(f"Ollama response status: {response.status_code}")
         print(f"Ollama response: {response.text}")
