@@ -45,30 +45,21 @@ function initializeTabNavigation() {
             tabContents.forEach(tab => tab.classList.remove('active'));
             
             button.classList.add('active');
-            
-            // Safely get and activate the target tab
-            const targetTabElement = document.getElementById(`${targetTab}-tab`);
-            if (targetTabElement) {
-                targetTabElement.classList.add('active');
-            } else {
-                console.warn(`⚠️ Tab element not found: ${targetTab}-tab`);
-                // If the tab doesn't exist, we need to load it dynamically
-                loadTabDynamically(targetTab);
-            }
+            document.getElementById(`${targetTab}-tab`).classList.add('active');
             
             // Load content based on tab
             switch(targetTab) {
                 case 'chat':
-                    loadChatContent();
+                    if (typeof loadChatContent === 'function') loadChatContent();
                     break;
                 case 'vocabulary':
-                    loadVocabularyContent();
+                    if (typeof loadVocabularyContent === 'function') loadVocabularyContent();
                     break;
                 case 'review':
-                    loadReviewContent();
+                    if (typeof loadReviewContent === 'function') loadReviewContent();
                     break;
                 case 'stats':
-                    loadStatsContent();
+                    if (typeof loadStatsContent === 'function') loadStatsContent();
                     break;
             }
             
@@ -138,82 +129,6 @@ function updateAppState(key, value) {
 
 function getAppState(key) {
     return AppState[key];
-}
-
-// Dynamic tab loading
-function loadTabDynamically(tabName) {
-    console.log(`📥 Loading tab dynamically: ${tabName}`);
-    
-    // For now, we'll just show a placeholder
-    // In a real app, you might fetch the tab content via AJAX
-    const mainContent = document.querySelector('.main-content');
-    if (mainContent) {
-        // Create a temporary tab content
-        const tempTab = document.createElement('div');
-        tempTab.id = `${tabName}-tab`;
-        tempTab.className = 'tab-content active';
-        tempTab.innerHTML = `
-            <div class="loading-placeholder">
-                <h2>Loading ${tabName}...</h2>
-                <p>This tab is being loaded dynamically.</p>
-            </div>
-        `;
-        
-        // Remove any existing tab content
-        const existingTabs = mainContent.querySelectorAll('.tab-content');
-        existingTabs.forEach(tab => tab.remove());
-        
-        // Add the new tab
-        mainContent.appendChild(tempTab);
-    }
-}
-
-// Load current vocabulary from backend
-function loadCurrentVocabulary() {
-    console.log('📚 Loading current vocabulary...');
-    
-    // This would typically make an API call to get vocabulary
-    // For now, we'll just log that it's being loaded
-    if (typeof API !== 'undefined') {
-        API.get('/api/sr/words')
-            .then(response => {
-                if (response.words) {
-                    AppState.currentVocabulary = response.words;
-                    console.log(`✅ Loaded ${response.words.length} vocabulary words`);
-                }
-            })
-            .catch(error => {
-                console.warn('⚠️ Could not load vocabulary:', error);
-                AppState.currentVocabulary = [];
-            });
-    } else {
-        console.warn('⚠️ API module not loaded yet');
-        AppState.currentVocabulary = [];
-    }
-}
-
-// Tab content loading functions
-function loadChatContent() {
-    console.log('💬 Loading chat content...');
-    // Chat content is already loaded as default
-}
-
-function loadVocabularyContent() {
-    console.log('📚 Loading vocabulary content...');
-    // This would load vocabulary-specific content
-    // For now, just log the action
-}
-
-function loadReviewContent() {
-    console.log('🔄 Loading review content...');
-    // This would load review-specific content
-    // For now, just log the action
-}
-
-function loadStatsContent() {
-    console.log('📊 Loading stats content...');
-    // This would load stats-specific content
-    // For now, just log the action
 }
 
 // Export for use in other modules
