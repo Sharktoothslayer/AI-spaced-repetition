@@ -515,6 +515,21 @@ def chat():
     except Exception as e:
         log(f"General exception: {e}")
         return jsonify({'error': f'Server error: {e}'}), 500
+    
+@app.route('/api/sr/search', methods=['GET'])
+def search_words():
+    """Search words by query. Always returns 200 with a JSON payload."""
+    try:
+        q = (request.args.get('q') or '').strip()
+        # For typeahead: return empty results for very short queries
+        if len(q) < 2:
+            return jsonify({'words': []})
+
+        results = sr_system.search_words(q)  # expects a list of word objects/dicts
+        return jsonify({'words': results})
+    except Exception as e:
+        # Still return JSON; avoid 404/HTML so the client can JSON.parse safely
+        return jsonify({'error': str(e), 'words': []}), 200
 
 @app.post("/api/chat/reset")
 def reset_chat():
