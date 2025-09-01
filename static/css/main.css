@@ -197,3 +197,25 @@ body {
         opacity: 1;
     }
 }
+
+/* Loading Placeholder */
+.loading-placeholder {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    padding: 60px 40px;
+    text-align: center;
+    margin: 20px;
+}
+
+.loading-placeholder h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+.loading-placeholder p {
+    color: #666;
+    font-size: 1.1rem;
+    margin: 0;
+}
