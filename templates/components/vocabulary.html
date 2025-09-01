@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="tab-content" id="vocabulary-tab">
+    <div class="vocabulary-container">
+        <div class="vocabulary-header">
+            <h1>Vocabulary Manager</h1>
+            <button class="add-word-btn" id="addWordBtn">+ Add Word</button>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search words..." class="search-input">
+        </div>
+        
+        <div class="words-list" id="wordsList">
+            <!-- Words will be loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
