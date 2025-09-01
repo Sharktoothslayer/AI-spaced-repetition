@@ -111,7 +111,7 @@ threading.Thread(target=warm_ollama, daemon=True).start()
 # -----------------------------
 @app.route('/')
 def index():
-    return render_template('components/chat.html')
+    return render_template('index.html')
 
 @app.route('/api/test')
 def test():
